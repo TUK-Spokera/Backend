@@ -1,4 +1,4 @@
-let socket = new WebSocket("ws://localhost:8080/ws/chat");
+let socket = new WebSocket("ws://appledolphin.xyz:8080/ws/chat");
 
 socket.onopen = function () {
     console.log("WebSocket 연결이 성공적으로 설정되었습니다.");

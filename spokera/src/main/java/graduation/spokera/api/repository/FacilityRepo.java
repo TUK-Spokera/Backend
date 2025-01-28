@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface FacilityRepo extends JpaRepository<Facility, Integer> {
     List<Facility> findByAddrCtpvNm(String addrCtpvNm);
+    List<Facility> findTop100ByAddrCtpvNm(String addrCtpvNm);
 }

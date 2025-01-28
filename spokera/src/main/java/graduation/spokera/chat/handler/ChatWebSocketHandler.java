@@ -2,6 +2,7 @@ package graduation.spokera.chat.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import graduation.spokera.chat.model.ChatMessage;
+import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String username = users.get(session);
         ChatMessage chatMessage = objectMapper.readValue(message.getPayload(), ChatMessage.class);
         chatMessage.setSender(username);
-        logger.info("chatMessage : {}", chatMessage);
+        logger.debug("[chat] {} : {}", chatMessage.getSender(), chatMessage.getContent());
 
         for (WebSocketSession s : users.keySet()){
             s.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessage)));
