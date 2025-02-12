@@ -1,6 +1,6 @@
-package graduation.spokera.chat.config;
+package graduation.spokera.api.config;
 
-import graduation.spokera.chat.handler.ChatWebSocketHandler;
+import graduation.spokera.api.handler.ChatWebSocketHandler;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -8,11 +8,11 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 @Configuration
 @EnableWebSocket
-public class WebSocketConfig implements WebSocketConfigurer {
+public class ChatWebSocketConfig implements WebSocketConfigurer {
 
     private final ChatWebSocketHandler chatWebSocketHandler;
 
-    public WebSocketConfig(ChatWebSocketHandler chatWebSocketHandler) {
+    public ChatWebSocketConfig(ChatWebSocketHandler chatWebSocketHandler) {
         this.chatWebSocketHandler = chatWebSocketHandler;
     }
 
