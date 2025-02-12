@@ -1,8 +1,7 @@
-package graduation.spokera.chat.handler;
+package graduation.spokera.api.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import graduation.spokera.chat.model.ChatMessage;
-import lombok.ToString;
+import graduation.spokera.api.model.ChatMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -11,10 +10,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
