@@ -1,5 +1,6 @@
 package graduation.spokera.api.controller;
 
+import graduation.spokera.api.dto.UserLocationDTO;
 import graduation.spokera.api.model.User;
 import graduation.spokera.api.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,17 @@ public class UserController {
     }
 
     // 위도/경도 업데이트
-    @PutMapping("/{userId}/location")
-    public ResponseEntity<User> updateUserLocation(
-            @PathVariable String username,
-            @RequestParam Double latitude,
-            @RequestParam Double longitude) {
-        return ResponseEntity.ok(userService.updateUserLocation(username, latitude, longitude));
+    @PutMapping("/location")
+    public ResponseEntity<User> updateUserLocation(@RequestBody UserLocationDTO userLocation) {
+        return ResponseEntity.ok(userService.updateUserLocation(
+                userLocation.getUsername(),
+                userLocation.getLatitude(),
+                userLocation.getLongitude()
+        ));
+    }
+
+    @GetMapping("/location")
+    public ResponseEntity<UserLocationDTO> getUserLocation(@RequestParam String username) {
+        return ResponseEntity.ok(userService.getUserLocation(username));
     }
 }
