@@ -1,6 +1,5 @@
 package graduation.spokera.api.repository;
 
-import graduation.spokera.api.model.ChatRoom;
 import graduation.spokera.api.model.Match;
 import graduation.spokera.api.model.enums.MatchStatus;
 import graduation.spokera.api.model.enums.MatchType;
@@ -24,14 +23,12 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     List<User> findMatchedUsers(@Param("sportType") String sportType, @Param("matchType") MatchType matchType);
 
     @Query("SELECT m FROM Match m WHERE m.sportType = :sportType " +
+            "AND m.status = :matchStatus " +
             "AND m.matchType = :matchType " +
             "AND m.startTime < :endTime " +
             "AND m.endTime > :startTime")
-    Optional<Match> findAvailableMatch(String sportType, LocalDateTime startTime, LocalDateTime endTime, MatchType matchType);
+    Optional<Match> findAvailableMatch(String sportType, LocalDateTime startTime, LocalDateTime endTime, MatchType matchType, MatchStatus matchStatus);
 
-    @Modifying
-    @Query("update Match m set m.chatRoom = :chatRoom where m.matchId=:matchId")
-    int updateChatroom(Long matchId, ChatRoom chatRoom);
 
     List<Match> findByStatus(MatchStatus status);
 }

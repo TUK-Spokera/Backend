@@ -36,3 +36,7 @@ application.properties
 
 ### VS Code ###
 .vscode/
+
+deploy.sh
+*.log
+*.gz

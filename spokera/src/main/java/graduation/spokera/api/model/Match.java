@@ -4,8 +4,12 @@ import graduation.spokera.api.model.enums.MatchStatus;
 import graduation.spokera.api.model.enums.MatchType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -14,15 +18,12 @@ import java.time.LocalDateTime;
 @Setter
 @Table(name = "matches")
 @ToString
+@NoArgsConstructor
 public class Match {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long matchId;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
 
     private String sportType;
     private LocalDateTime startTime;
@@ -34,11 +35,4 @@ public class Match {
     @Enumerated(EnumType.STRING)
     private MatchType matchType;
 
-    @OneToOne
-    @JoinColumn(name = "chat_room_id")
-    private ChatRoom chatRoom;
-
-    public Match() {
-        this.status = MatchStatus.WAITING;  // 기본 상태는 WAITING
-    }
 }
