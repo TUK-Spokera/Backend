@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매칭 시스템</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    #match-container, #waiting-list {
+      width: 400px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .match-item {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #aaa;
+      cursor: pointer;
+      background: #f4f4f4;
+    }
+    input, button, select {
+      margin-top: 10px;
+      padding: 10px;
+      width: 90%;
+    }
+    button {
+      width: 95%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h2>매칭 시스템</h2>
+
+<!-- 매칭 요청 UI -->
+<div id="match-container">
+  <h3>매칭 요청</h3>
+  <input type="text" id="userId" placeholder="사용자 ID 입력" />
+  <select id="sportType">
+    <option value="배드민턴">배드민턴</option>
+    <option value="축구">축구</option>
+    <option value="농구">농구</option>
+  </select>
+  <select id="matchType">
+    <option value="ONE_VS_ONE">1대1</option>
+    <option value="TEAM">팀 매칭</option>
+  </select>
+  <input type="datetime-local" id="startTime" />
+  <input type="datetime-local" id="endTime" />
+  <button onclick="requestMatch()">매칭 요청</button>
+</div>
+
+
+<script>
+  function requestMatch() {
+    let userId = document.getElementById("userId").value.trim();
+    let sportType = document.getElementById("sportType").value;
+    let matchType = document.getElementById("matchType").value;
+    let startTime = document.getElementById("startTime").value;
+    let endTime = document.getElementById("endTime").value;
+
+    if (!userId || !startTime || !endTime) {
+      alert("사용자 ID, 시작 시간, 종료 시간을 입력하세요.");
+      return;
+    }
+
+    let requestData = {
+      username: userId,
+      sportType: sportType,
+      matchType: matchType,
+      startTime: startTime,
+      endTime: endTime
+    };
+
+    fetch("http://appledolphin.xyz:8080/api/match/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestData)
+    })
+            .then(response => {
+              if (response.status === 409) {
+                return response.text().then(msg => { throw new Error(msg); });
+              }
+              return response.json();
+            })
+            .then(data => {
+              alert(`매칭 요청 완료 방 번호: ${data.matchId} (상태: ${data.status})`);
+            })
+            .catch(error => {
+              alert(error.message);
+            });
+  }
+
+</script>
+
+</body>
+</html>

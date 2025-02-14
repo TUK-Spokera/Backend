@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대기 중인 매칭 목록</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    .match-container {
+      width: 80%;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .match-item {
+      background: #e9ecef;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .no-match {
+      color: red;
+      font-weight: bold;
+    }
+
+    .refresh-btn {
+      margin-top: 15px;
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .refresh-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<h2>대기 중인 매칭 목록</h2>
+<button class="refresh-btn" onclick="fetchWaitingMatches()">새로고침</button>
+
+<div class="match-container">
+  <h3>대기 중인 매칭</h3>
+  <div id="match-list">
+    <p class="no-match">로딩 중...</p>
+  </div>
+</div>
+
+<script>
+  const API_URL = "http://appledolphin.xyz:8080/api/match/wait-list";
+
+  function fetchWaitingMatches() {
+    fetch(API_URL)
+            .then(response => response.json())
+            .then(matches => {
+              const matchList = document.getElementById("match-list");
+              matchList.innerHTML = ""; // 기존 데이터 초기화
+
+              let filteredMatches = matches.filter(match => match.status === "WAITING");
+
+              if (filteredMatches.length === 0) {
+                matchList.innerHTML = "<p class='no-match'>대기 중인 매칭이 없습니다.</p>";
+                return;
+              }
+
+              filteredMatches.forEach(match => {
+                let matchItem = document.createElement("div");
+                matchItem.classList.add("match-item");
+                matchItem.textContent = `방 번호: ${match.matchId}, 스포츠: ${match.sportType}, 시간: ${new Date(match.startTime).toLocaleString()} ~ ${new Date(match.endTime).toLocaleString()}`;
+                matchList.appendChild(matchItem);
+              });
+            })
+            .catch(error => {
+              console.error("대기 중인 매칭 목록 조회 실패:", error);
+              document.getElementById("match-list").innerHTML = "<p class='no-match'>데이터를 불러오는 데 실패했습니다.</p>";
+            });
+  }
+
+  // 페이지 로드 시 데이터 불러오기
+  window.onload = fetchWaitingMatches;
+
+  // 10초마다 자동 업데이트
+  setInterval(fetchWaitingMatches, 10000);
+</script>
+
+</body>
+</html>

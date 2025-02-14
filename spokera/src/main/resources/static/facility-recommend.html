@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경기장 추천 시스템</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      width: 50%;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #ffffff;
+      padding: 15px;
+      margin: 5px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+
+    .facility-title {
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .facility-info {
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>경기장 추천 시스템</h1>
+  <label for="matchId">매칭 ID 입력:</label>
+  <input type="number" id="matchId" placeholder="매칭 ID 입력">
+  <button onclick="getRecommendedFacilities()">추천 경기장 보기</button>
+
+  <h2>추천된 경기장</h2>
+  <ul id="facilityList"></ul>
+</div>
+
+<script>
+  const API_BASE_URL = "http://appledolphin.xyz:8080/api/facility"; // 백엔드 API 주소
+
+  async function getRecommendedFacilities() {
+    const matchId = document.getElementById("matchId").value;
+    if (!matchId) {
+      alert("매칭 ID를 입력하세요!");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/recommend/${matchId}`);
+      if (!response.ok) {
+        throw new Error(`서버 오류: ${response.status}`);
+      }
+
+      const facilities = await response.json();
+      displayFacilities(facilities);
+    } catch (error) {
+      console.error("경기장 추천 요청 실패:", error);
+      alert("경기장 추천을 불러오는 중 오류가 발생했습니다.");
+    }
+  }
+
+  function displayFacilities(facilities) {
+    const facilityList = document.getElementById("facilityList");
+    facilityList.innerHTML = "";
+
+    if (facilities.length === 0) {
+      facilityList.innerHTML = "<li>추천된 경기장이 없습니다.</li>";
+      return;
+    }
+
+    facilities.forEach(facility => {
+      const listItem = document.createElement("li");
+
+      listItem.innerHTML = `
+                    <div class="facility-title">🏟️ ${facility.faciNm} (${facility.ftypeNm})</div>
+                    <div class="facility-info">📍 주소: ${facility.faciAddr}</div>
+                    <div class="facility-info">🛣️ 도로명: ${facility.faciRoadAddr}</div>
+                    <div class="facility-info">🏢 회사명: ${facility.fcobNm || '정보 없음'}</div>
+                    <div class="facility-info">📍 위도: ${facility.faciLat}, 경도: ${facility.faciLot}</div>
+                `;
+
+      facilityList.appendChild(listItem);
+    });
+  }
+</script>
+</body>
+</html>

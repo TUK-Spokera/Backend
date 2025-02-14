@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>채팅방 목록</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    #room-list-container {
+      width: 400px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    input, button {
+      margin-top: 10px;
+      padding: 10px;
+      width: 90%;
+    }
+    button {
+      width: 95%;
+      cursor: pointer;
+    }
+    .room-item {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #aaa;
+      cursor: pointer;
+      background: #f4f4f4;
+    }
+  </style>
+</head>
+<body>
+
+<h2>내 채팅방 목록</h2>
+
+<!-- 사용자 로그인 -->
+<div id="login-container">
+  <input type="text" id="username" placeholder="닉네임 입력" />
+  <button onclick="fetchUserRooms()">내 채팅방 불러오기</button>
+</div>
+
+<!-- 채팅방 목록 -->
+<div id="room-list-container">
+  <h3>내 채팅방</h3>
+  <div id="room-list"></div>
+</div>
+
+<script>
+  function fetchUserRooms() {
+    const username = document.getElementById("username").value.trim();
+
+    if (!username) {
+      alert("닉네임을 입력하세요.");
+      return;
+    }
+
+    localStorage.setItem("username", username);  // ✅ 사용자 정보 저장
+
+    fetch(`http://appledolphin.xyz:8080/api/chat/rooms/${username}`)
+            .then(response => response.json())
+            .then(rooms => {
+              const roomList = document.getElementById("room-list");
+              roomList.innerHTML = "";
+
+              if (rooms.length === 0) {
+                roomList.innerHTML = "<p>참여한 채팅방이 없습니다.</p>";
+                return;
+              }
+
+              rooms.forEach(room => {
+                let roomItem = document.createElement("div");
+                roomItem.classList.add("room-item");
+                roomItem.textContent = `방 번호: ${room.matchId}, 스포츠: ${room.sportType}, 상태: ${room.status}`;
+                roomItem.addEventListener("click", () => enterChatRoom(room.matchId, room.sportType));
+                roomList.appendChild(roomItem);
+              });
+            })
+            .catch(error => console.error("채팅방 목록 불러오기 실패:", error));
+  }
+
+  function enterChatRoom(matchId, sportType) {
+    localStorage.setItem("roomId", matchId);  // ✅ 방 ID 저장
+    localStorage.setItem("sportType", sportType);
+    window.location.href = "chat-room.html";  // ✅ 채팅방 화면으로 이동
+  }
+</script>
+
+</body>
+</html>
