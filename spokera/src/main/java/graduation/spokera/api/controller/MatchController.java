@@ -6,6 +6,7 @@ import graduation.spokera.api.dto.MatchRequestDTO;
 import graduation.spokera.api.service.MatchService;
 import graduation.spokera.api.model.User;
 import graduation.spokera.api.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +34,6 @@ public class MatchController {
         if (userOpt.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-
 
         MatchResponseDTO matchResponseDTO = matchService.findOrCreateMatch(matchRequestDto, userOpt.get());
         return ResponseEntity.ok(matchResponseDTO);

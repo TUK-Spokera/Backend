@@ -38,6 +38,9 @@ dependencies {
 
 	// 로그
 	implementation 'org.springframework.boot:spring-boot-starter-logging'
+
+	//html 변경시 바로반영
+	implementation 'org.springframework.boot:spring-boot-devtools'
 }
 
 tasks.named('test') {
