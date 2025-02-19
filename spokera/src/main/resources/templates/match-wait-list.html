@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/config.js"></script>
   <title>대기 중인 매칭 목록</title>
   <style>
     body {
@@ -67,10 +68,8 @@
 </div>
 
 <script>
-  const API_URL = "http://appledolphin.xyz:8080/api/match/wait-list";
-
   function fetchWaitingMatches() {
-    fetch(API_URL)
+    fetch(MATCH_WAIT_LIST_URL)
             .then(response => response.json())
             .then(matches => {
               const matchList = document.getElementById("match-list");

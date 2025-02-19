@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/config.js"></script>
   <title>매칭 시스템</title>
   <style>
     body {
@@ -61,6 +62,7 @@
 
 <script>
   function requestMatch() {
+
     let userId = document.getElementById("userId").value.trim();
     let sportType = document.getElementById("sportType").value;
     let matchType = document.getElementById("matchType").value;
@@ -80,7 +82,7 @@
       endTime: endTime
     };
 
-    fetch("http://appledolphin.xyz:8080/api/match/request", {
+    fetch(MATCH_REQUEST_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestData)

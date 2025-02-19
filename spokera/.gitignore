@@ -40,3 +40,4 @@ application.properties
 deploy.sh
 *.log
 *.gz
+.env
