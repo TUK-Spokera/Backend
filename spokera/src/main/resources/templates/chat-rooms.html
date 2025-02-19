@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/config.js"></script>
   <title>채팅방 목록</title>
   <style>
     body {
@@ -62,7 +63,7 @@
 
     localStorage.setItem("username", username);  // ✅ 사용자 정보 저장
 
-    fetch(`http://appledolphin.xyz:8080/api/chat/rooms/${username}`)
+    fetch(`${CHAT_ROOMS_URL}/${username}`)
             .then(response => response.json())
             .then(rooms => {
               const roomList = document.getElementById("room-list");

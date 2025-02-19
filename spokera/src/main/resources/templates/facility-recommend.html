@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/config.js"></script>
   <title>경기장 추천 시스템</title>
   <style>
     body {
@@ -80,8 +81,6 @@
 </div>
 
 <script>
-  const API_BASE_URL = "http://appledolphin.xyz:8080/api/facility"; // 백엔드 API 주소
-
   async function getRecommendedFacilities() {
     const matchId = document.getElementById("matchId").value;
     if (!matchId) {
@@ -90,7 +89,7 @@
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/recommend/${matchId}`);
+      const response = await fetch(`${FACILITY_RECOMMEND_URL}/${matchId}`);
       if (!response.ok) {
         throw new Error(`서버 오류: ${response.status}`);
       }

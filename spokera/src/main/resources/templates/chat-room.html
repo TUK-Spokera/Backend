@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/config.js"></script>
   <title>실시간 채팅</title>
   <style>
     body {
@@ -64,7 +65,7 @@
   }
 
   function loadChatHistory() {
-    fetch(`http://appledolphin.xyz:8080/api/chat/history/${roomId}`)
+    fetch(`${CHAT_HISTORY_URL}/${roomId}`)
             .then(response => response.json())
             .then(messages => {
               document.getElementById("messages").innerHTML = "";
@@ -75,7 +76,7 @@
   }
 
   function connectWebSocket() {
-    let socket = new SockJS("http://appledolphin.xyz:8080/ws-chat");
+    let socket = new SockJS(CHAT_SOCKET_URL);
     stompClient = Stomp.over(socket);
 
     stompClient.connect({}, function (frame) {
