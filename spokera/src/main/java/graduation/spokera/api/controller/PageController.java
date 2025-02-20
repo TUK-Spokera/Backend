@@ -22,7 +22,7 @@ public class PageController {
         return "facility-recommend";
     }
 
-    @RequestMapping("/match-wait-lists")
+    @RequestMapping("/match-wait-list")
     public String matchWaitListsPage(Model model){
         return "match-wait-list";
     }

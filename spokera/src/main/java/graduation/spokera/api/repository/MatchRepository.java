@@ -30,5 +30,5 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     Optional<Match> findAvailableMatch(String sportType, LocalDateTime startTime, LocalDateTime endTime, MatchType matchType, MatchStatus matchStatus);
 
 
-    List<Match> findByStatus(MatchStatus status);
+    List<Match> findByStatus(MatchStatus matchStatus);
 }

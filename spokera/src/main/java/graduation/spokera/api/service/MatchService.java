@@ -1,8 +1,8 @@
 package graduation.spokera.api.service;
 
+import graduation.spokera.api.dto.MatchCreateResponseDTO;
 import graduation.spokera.api.model.*;
 import graduation.spokera.api.dto.MatchRequestDTO;
-import graduation.spokera.api.dto.MatchResponseDTO;
 import graduation.spokera.api.model.enums.MatchStatus;
 import graduation.spokera.api.model.enums.TeamType;
 import graduation.spokera.api.repository.UserRepository;
@@ -13,9 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.concurrent.ThreadLocalRandom;
+
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,54 +31,36 @@ public class MatchService {
     private final FacilityService facilityService;
     private final UserRepository userRepository;
 
+    /**
+     * 매칭방에 들어가기
+     */
     @Transactional
-    public MatchResponseDTO findOrCreateMatch(MatchRequestDTO matchRequestDto, User user) {
+    public Boolean joinMatch(User user, Long matchId) {
 
-//        // 사용자가 이미 해당 타입의 매칭에 속해 있는지 확인
-//        boolean isAlreadyInMatch = matchParticipantRepository.existsByUserAndMatch_SportTypeAndMatch_MatchTypeAndMatch_Status(
-//                user, matchRequestDto.getSportType(), matchRequestDto.getMatchType(), MatchStatus.WAITING
-//        );
-//
-//        if (isAlreadyInMatch) {
-//            throw new RuntimeException("이미 대기 중인 매칭에 참가하고 있습니다.");
-//        }
+        // 매칭 완료로 상태 바꿈
+        Match match = matchRepository.findById(matchId).get();
+        match.setStatus(MatchStatus.MATCHED);
+        matchRepository.save(match);
 
-        // 가능한 매칭 찾기
-        Optional<Match> availableMatch = matchRepository.findAvailableMatch(
-                matchRequestDto.getSportType(),
-                matchRequestDto.getStartTime(),
-                matchRequestDto.getEndTime(),
-                matchRequestDto.getMatchType(),
-                MatchStatus.WAITING
-        );
+        // 매칭에 유저 들어감
+        MatchParticipant matchParticipant = MatchParticipant.builder()
+                .match(match)
+                .team(TeamType.BLUE)
+                .user(user)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        matchParticipantRepository.save(matchParticipant);
 
-        // 가능한 매칭이 있다면 매칭이 잡히고 경기장 추천하고 채팅방 번호랑 같이 리턴
-        if (availableMatch.isPresent()) {
-            Match match = availableMatch.get();
+        return true;
 
-            // 매칭됨으로 status 변경
-            match.setStatus(MatchStatus.MATCHED);
-            matchRepository.save(match);
+    }
 
-            // 매칭된 유저 리스트 가져오기
-            List<User> matchedUsers = matchRepository.findMatchedUsers(match.getSportType(), match.getMatchType());
-
-            // 경기장 추천
-            List<Facility> facilityList = facilityService.recommendFacilities(matchedUsers, matchRequestDto.getSportType(), 5);
-
-            // 응답 DTO 작성
-            MatchResponseDTO matchResponseDTO = getMatchSuccessResponseDTO(match);
-
-            // 경기멤버 데이터베이스에 저장
-            MatchParticipant matchParticipant = setMatchParticipant(user, match, TeamType.BLUE);
-            matchParticipantRepository.save(matchParticipant);
-
-            return matchResponseDTO;
-        }
-
-
-        // 가능한 매칭이 없다면 새로운 매칭 생성
-        Match match = createMatch(matchRequestDto, user);
+    /**
+     * 매칭방 생성
+     */
+    @Transactional
+    public MatchCreateResponseDTO createMatch(MatchRequestDTO matchRequestDto, User user) {
+        Match match = setMatch(matchRequestDto, user);
         matchRepository.save(match);
 
         log.info("새로운 매칭방 생성 : {}", match);
@@ -84,11 +69,10 @@ public class MatchService {
         MatchParticipant matchParticipant = setMatchParticipant(user, match, TeamType.RED);
         matchParticipantRepository.save(matchParticipant);
 
-        MatchResponseDTO matchResponseDTO = new MatchResponseDTO();
-        matchResponseDTO.setMatchId(match.getMatchId());
-        matchResponseDTO.setStatus(MatchStatus.WAITING);
+        MatchCreateResponseDTO matchCreateResponseDTO = new MatchCreateResponseDTO();
+        matchCreateResponseDTO.setMatchId(match.getMatchId());
 
-        return matchResponseDTO;
+        return matchCreateResponseDTO;
     }
 
     /**
@@ -112,10 +96,9 @@ public class MatchService {
             throw new RuntimeException("매칭방에 참여한 사용자가 없습니다.");
         }
 
-        // FacilityService를 활용하여 시설 추천
+        // 활용하여 시설 추천
         return facilityService.recommendFacilities(users, match.getSportType(), 5);
     }
-
 
     private static MatchParticipant setMatchParticipant(User user, Match match, TeamType teamType) {
         MatchParticipant matchParticipant = new MatchParticipant();
@@ -126,24 +109,29 @@ public class MatchService {
         return matchParticipant;
     }
 
-    private static Match createMatch(MatchRequestDTO matchRequestDto, User user) {
+    private static Match setMatch(MatchRequestDTO matchRequestDto, User user) {
         Match match = new Match();
         match.setSportType(matchRequestDto.getSportType());
         match.setStartTime(matchRequestDto.getStartTime());
         match.setEndTime(matchRequestDto.getEndTime());
         match.setMatchType(matchRequestDto.getMatchType());
         match.setStatus(MatchStatus.WAITING);
+//        match.setRecommendationScore(ThreadLocalRandom.current().nextInt(0, 11));
         return match;
     }
 
-    private static MatchResponseDTO getMatchSuccessResponseDTO(Match match) {
-        MatchResponseDTO matchResponseDTO = new MatchResponseDTO();
-        matchResponseDTO.setMatchId(match.getMatchId());
-        matchResponseDTO.setStatus(match.getStatus());
-        return matchResponseDTO;
+    public List<Match> getWaitingMatches() {
+//        return matchRepository.findByStatus(MatchStatus.WAITING);
+        return matchRepository.findByStatus(MatchStatus.WAITING);
     }
 
-    public List<Match> getWaitingMatches() {
-        return matchRepository.findByStatus(MatchStatus.WAITING);
+    public List<Match> getRecommendedMatches() {
+        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+        matches.forEach(match ->
+                match.setRecommendationScore(ThreadLocalRandom.current().nextInt(0, 11))
+        );
+
+        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
+        return matches;
     }
 }
