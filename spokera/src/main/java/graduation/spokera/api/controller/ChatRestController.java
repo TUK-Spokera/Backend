@@ -1,7 +1,6 @@
 package graduation.spokera.api.controller;
 
 import graduation.spokera.api.dto.ChatMessageDTO;
-import graduation.spokera.api.dto.MatchDTO;
 import graduation.spokera.api.model.ChatMessage;
 import graduation.spokera.api.model.Match;
 import graduation.spokera.api.model.MatchParticipant;
@@ -42,7 +41,7 @@ public class ChatRestController {
      * ✅ 사용자가 속한 채팅방 목록 불러오기
      */
     @GetMapping("/rooms/{username}")
-    public List<MatchDTO> getUserChatRooms(@PathVariable String username) {
+    public List<Match> getUserChatRooms(@PathVariable String username) {
         // 사용자를 조회
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -54,8 +53,6 @@ public class ChatRestController {
                 .collect(Collectors.toList());
 
         // DTO 변환하여 반환
-        return userMatches.stream()
-                .map(match -> new MatchDTO(match.getMatchId(), match.getSportType(), match.getStatus(), match.getStartTime(), match.getEndTime()))
-                .collect(Collectors.toList());
+        return userMatches;
     }
 }

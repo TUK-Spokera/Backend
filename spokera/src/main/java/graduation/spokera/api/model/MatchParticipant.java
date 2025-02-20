@@ -3,6 +3,7 @@ package graduation.spokera.api.model;
 import graduation.spokera.api.model.enums.TeamType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MatchParticipant {
 
     @Id
@@ -28,6 +31,5 @@ public class MatchParticipant {
     @Enumerated(EnumType.STRING)
     private TeamType team;
 
-    @Column(nullable = false)
     private LocalDateTime joinedAt;
 }

@@ -1,22 +1,22 @@
 package graduation.spokera.api.controller;
 
-import graduation.spokera.api.dto.MatchResponseDTO;
+import graduation.spokera.api.dto.MatchCreateResponseDTO;
+import graduation.spokera.api.dto.MatchJoinRequestDTO;
 import graduation.spokera.api.model.Match;
 import graduation.spokera.api.dto.MatchRequestDTO;
 import graduation.spokera.api.service.MatchService;
 import graduation.spokera.api.model.User;
 import graduation.spokera.api.repository.UserRepository;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Array;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/match")
+@Slf4j
 public class MatchController {
 
     private final MatchService matchService;
@@ -27,16 +27,39 @@ public class MatchController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping("/request")
-    public ResponseEntity<MatchResponseDTO> requestMatch(@RequestBody MatchRequestDTO matchRequestDto) {
+    @PostMapping("/recommend")
+    public ResponseEntity<List<Match>> requestMatch(@RequestBody MatchRequestDTO matchRequestDto) {
         Optional<User> userOpt = userRepository.findByUsername(matchRequestDto.getUsername());
 
         if (userOpt.isEmpty()) {
+            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getUsername());
             return ResponseEntity.badRequest().build();
         }
 
-        MatchResponseDTO matchResponseDTO = matchService.findOrCreateMatch(matchRequestDto, userOpt.get());
-        return ResponseEntity.ok(matchResponseDTO);
+        List<Match> matches = matchService.getRecommendedMatches();
+        return ResponseEntity.ok(matches);
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRequestDTO matchRequestDto) {
+        Optional<User> userOpt = userRepository.findByUsername(matchRequestDto.getUsername());
+
+        if (userOpt.isEmpty()) {
+            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getUsername());
+            return ResponseEntity.badRequest().build();
+        }
+
+
+        MatchCreateResponseDTO matchCreateResponseDTO = matchService.createMatch(matchRequestDto, userOpt.get());
+        return ResponseEntity.ok(matchCreateResponseDTO);
+    }
+
+    @PostMapping("/join")
+    public ResponseEntity<Boolean> joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO){
+        Optional<User> userOpt = userRepository.findByUsername(matchJoinRequestDTO.getUsername());
+
+        Boolean joinResult = matchService.joinMatch(userOpt.get(), matchJoinRequestDTO.getMatchId());
+        return ResponseEntity.ok(joinResult);
     }
 
     @GetMapping("/wait-list")

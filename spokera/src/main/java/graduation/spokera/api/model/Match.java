@@ -35,4 +35,7 @@ public class Match {
     @Enumerated(EnumType.STRING)
     private MatchType matchType;
 
+    @Transient
+    private Integer recommendationScore;
+
 }

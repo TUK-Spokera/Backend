@@ -58,7 +58,7 @@
 
   if (!username || !roomId) {
     alert("잘못된 접근입니다.");
-    window.location.href = "chat-rooms.html";
+    window.location.href = "chat-rooms";
   } else {
     document.getElementById("room-title").textContent = `${sportType} 채팅방 (${roomId})`;
     loadChatHistory();
@@ -122,7 +122,7 @@
     }
     localStorage.removeItem("roomId");
     localStorage.removeItem("sportType");
-    window.location.href = "chat-rooms.html";
+    window.location.href = "chat-rooms";
   }
 </script>
 

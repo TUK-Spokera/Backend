@@ -22,7 +22,6 @@ public class UserService {
     }
 
 
-
     // 사용자 위치 업데이트
     public User updateUserLocation(String username, Double latitude, Double longitude) {
         Optional<User> existingUserOpt = userRepository.findByUsername(username);
