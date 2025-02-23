@@ -1,6 +1,7 @@
-package graduation.spokera.api.model;
+package graduation.spokera.api.domain.match;
 
-import graduation.spokera.api.model.enums.TeamType;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.domain.type.TeamType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

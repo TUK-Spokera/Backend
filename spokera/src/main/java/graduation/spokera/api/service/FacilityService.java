@@ -1,8 +1,8 @@
 package graduation.spokera.api.service;
 
-import graduation.spokera.api.model.Facility;
-import graduation.spokera.api.model.User;
-import graduation.spokera.api.repository.FacilityRepo;
+import graduation.spokera.api.domain.facility.*;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.dto.facility.FacilityLocationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FacilityService {
 
-    private final FacilityRepo facilityRepo;
+    private final FacilityRepository facilityRepo;
 
     public List<Facility> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
 
@@ -56,5 +56,16 @@ public class FacilityService {
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return earthRadius * c;
+    }
+
+
+    public FacilityLocationResponse getFacilityLocation(String faciNm) {
+        Facility facility = findFacilityByName(faciNm);
+        return new FacilityLocationResponse(facility.getFaciLat(), facility.getFaciLot(), 10); // altitude 고정값
+    }
+
+    private Facility findFacilityByName(String faciNm) {
+        return facilityRepo.findByFaciNm(faciNm)
+                .orElseThrow(() -> new IllegalArgumentException("해당 경기장을 찾을 수 없습니다: " + faciNm));
     }
 }

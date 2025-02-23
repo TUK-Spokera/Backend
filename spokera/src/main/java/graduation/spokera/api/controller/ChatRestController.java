@@ -1,13 +1,13 @@
 package graduation.spokera.api.controller;
 
-import graduation.spokera.api.dto.ChatMessageDTO;
-import graduation.spokera.api.model.ChatMessage;
-import graduation.spokera.api.model.Match;
-import graduation.spokera.api.model.MatchParticipant;
-import graduation.spokera.api.model.User;
-import graduation.spokera.api.repository.ChatMessageRepository;
-import graduation.spokera.api.repository.MatchParticipantRepository;
-import graduation.spokera.api.repository.UserRepository;
+import graduation.spokera.api.dto.chat.ChatMessageDTO;
+import graduation.spokera.api.domain.chat.ChatMessage;
+import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.domain.match.MatchParticipant;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.domain.chat.ChatMessageRepository;
+import graduation.spokera.api.domain.match.MatchParticipantRepository;
+import graduation.spokera.api.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -1,15 +1,12 @@
-package graduation.spokera.api.model;
+package graduation.spokera.api.domain.match;
 
-import graduation.spokera.api.model.enums.MatchStatus;
-import graduation.spokera.api.model.enums.MatchType;
+import graduation.spokera.api.domain.type.MatchStatus;
+import graduation.spokera.api.domain.type.MatchType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import java.time.LocalDateTime;
 

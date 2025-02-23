@@ -1,6 +1,5 @@
-package graduation.spokera.api.model;
+package graduation.spokera.api.domain.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
