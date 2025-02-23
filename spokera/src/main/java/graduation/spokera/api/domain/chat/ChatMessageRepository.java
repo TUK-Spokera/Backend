@@ -1,6 +1,5 @@
-package graduation.spokera.api.repository;
+package graduation.spokera.api.domain.chat;
 
-import graduation.spokera.api.model.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

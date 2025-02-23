@@ -1,13 +1,16 @@
 package graduation.spokera.api.service;
 
-import graduation.spokera.api.dto.MatchCreateResponseDTO;
-import graduation.spokera.api.model.*;
-import graduation.spokera.api.dto.MatchRequestDTO;
-import graduation.spokera.api.model.enums.MatchStatus;
-import graduation.spokera.api.model.enums.TeamType;
-import graduation.spokera.api.repository.UserRepository;
-import graduation.spokera.api.repository.MatchParticipantRepository;
-import graduation.spokera.api.repository.MatchRepository;
+import graduation.spokera.api.domain.facility.Facility;
+import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.domain.match.MatchParticipant;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
+import graduation.spokera.api.dto.match.MatchRequestDTO;
+import graduation.spokera.api.domain.type.MatchStatus;
+import graduation.spokera.api.domain.type.TeamType;
+import graduation.spokera.api.domain.user.UserRepository;
+import graduation.spokera.api.domain.match.MatchParticipantRepository;
+import graduation.spokera.api.domain.match.MatchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

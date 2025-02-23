@@ -1,7 +1,7 @@
 package graduation.spokera.api.controller;
 
-import graduation.spokera.api.dto.UserLocationDTO;
-import graduation.spokera.api.model.User;
+import graduation.spokera.api.dto.user.UserLocationDTO;
+import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

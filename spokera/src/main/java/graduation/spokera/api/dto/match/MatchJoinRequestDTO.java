@@ -1,4 +1,4 @@
-package graduation.spokera.api.dto;
+package graduation.spokera.api.dto.match;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

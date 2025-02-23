@@ -1,14 +1,11 @@
 package graduation.spokera.api.service;
 
-import graduation.spokera.api.dto.UserLocationDTO;
-import graduation.spokera.api.model.User;
-import graduation.spokera.api.repository.UserRepository;
+import graduation.spokera.api.dto.user.UserLocationDTO;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

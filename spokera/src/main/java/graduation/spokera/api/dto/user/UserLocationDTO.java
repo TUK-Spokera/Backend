@@ -1,4 +1,4 @@
-package graduation.spokera.api.dto;
+package graduation.spokera.api.dto.user;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

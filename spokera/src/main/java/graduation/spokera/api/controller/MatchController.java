@@ -1,12 +1,12 @@
 package graduation.spokera.api.controller;
 
-import graduation.spokera.api.dto.MatchCreateResponseDTO;
-import graduation.spokera.api.dto.MatchJoinRequestDTO;
-import graduation.spokera.api.model.Match;
-import graduation.spokera.api.dto.MatchRequestDTO;
+import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
+import graduation.spokera.api.dto.match.MatchJoinRequestDTO;
+import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.dto.match.MatchRequestDTO;
 import graduation.spokera.api.service.MatchService;
-import graduation.spokera.api.model.User;
-import graduation.spokera.api.repository.UserRepository;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.domain.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,5 +1,7 @@
-package graduation.spokera.api.model;
+package graduation.spokera.api.domain.chat;
 
+import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,6 +1,6 @@
-package graduation.spokera.api.dto;
+package graduation.spokera.api.dto.match;
 
-import graduation.spokera.api.model.enums.MatchType;
+import graduation.spokera.api.domain.type.MatchType;
 import lombok.Data;
 
 import java.time.LocalDateTime;

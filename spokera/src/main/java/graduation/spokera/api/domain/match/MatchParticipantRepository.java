@@ -1,15 +1,11 @@
-package graduation.spokera.api.repository;
+package graduation.spokera.api.domain.match;
 
-import graduation.spokera.api.model.Match;
-import graduation.spokera.api.model.MatchParticipant;
-import graduation.spokera.api.model.User;
-import graduation.spokera.api.model.enums.MatchStatus;
-import graduation.spokera.api.model.enums.MatchType;
-import org.hibernate.sql.results.graph.FetchList;
+import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.domain.type.MatchStatus;
+import graduation.spokera.api.domain.type.MatchType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
 
 @Repository
