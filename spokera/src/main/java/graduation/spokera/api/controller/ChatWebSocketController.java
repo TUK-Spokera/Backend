@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Controller
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatWebSocketController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final ChatMessageRepository chatMessageRepository;
