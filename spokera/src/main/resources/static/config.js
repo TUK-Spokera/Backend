@@ -1,5 +1,5 @@
 // const API_BASE_URL = window.location.origin; // 현재 호스트 기반으로 설정
-const API_BASE_URL = "http://appledolphin.xyz:8080";
+const API_BASE_URL = "https://appledolphin.xyz";
 const MATCH_REQUEST_URL = API_BASE_URL + `/api/match/request`
 const CHAT_HISTORY_URL = API_BASE_URL + `/api/chat/history`
 const CHAT_SOCKET_URL = API_BASE_URL + `/ws-chat-sockjs`
