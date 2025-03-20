@@ -1,12 +1,11 @@
 package graduation.spokera.api.controller;
 
 import graduation.spokera.api.domain.facility.Facility;
-import graduation.spokera.api.domain.facility.FacilityRepository;
+import graduation.spokera.api.repository.FacilityRepository;
 import graduation.spokera.api.dto.facility.FacilityLocationResponse;
 import graduation.spokera.api.service.FacilityService;
 import graduation.spokera.api.service.MatchService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
