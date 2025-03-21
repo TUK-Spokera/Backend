@@ -6,26 +6,30 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 @NoArgsConstructor
-@Data
 @AllArgsConstructor
+@Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Long id; // 기본 키
 
     @Column(nullable = false, unique = true)
-    private String username; // 사용자 이름
+    private String kakaoId; // 카카오 사용자 ID (unique)
 
-    private Double latitude; // 현재 위치 위도
+    private String nickname;
+    private String email;
+
+    private Double latitude;  // 현재 위치 위도
     private Double longitude; // 현재 위치 경도
 
-    private LocalDateTime createdAt; // 계정 생성 시간
+    private int rating; // 매칭 시 활용할 실력 점수
 
-    private int rating; // 실력 점수 (매칭 시 사용)
+    private LocalDateTime createdAt; // 가입일
 
-    // 엔티티가 저장되기 전에 자동으로 실행
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

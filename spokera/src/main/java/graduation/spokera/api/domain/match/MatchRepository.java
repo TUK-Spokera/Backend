@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface MatchRepository extends JpaRepository<Match, Long> {
 
 
-    @Query("SELECT DISTINCT u FROM User u JOIN MatchParticipant mp ON u.userId = mp.user.userId " +
+    @Query("SELECT DISTINCT u FROM User u JOIN MatchParticipant mp ON u.id = mp.user.id " +
             "WHERE mp.match.sportType = :sportType AND mp.match.matchType = :matchType")
     List<User> findMatchedUsers(@Param("sportType") String sportType, @Param("matchType") MatchType matchType);
 

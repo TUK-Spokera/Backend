@@ -33,7 +33,7 @@ public class ChatController {
         Match match = matchRepository.findById(chatMessageDTO.getMatchId())
                 .orElseThrow(() -> new RuntimeException("매칭방을 찾을 수 없습니다."));
 
-        User user = userRepository.findByUsername(chatMessageDTO.getSenderName())
+        User user = userRepository.findByNickname(chatMessageDTO.getSenderName())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         ChatMessage chatMessage = new ChatMessage();
@@ -47,6 +47,6 @@ public class ChatController {
         // ✅ 특정 채팅방(`/topic/room/{matchId}`)으로 메시지 전송
         String destination = "/topic/room/" + chatMessageDTO.getMatchId();
         simpMessagingTemplate.convertAndSend(destination,
-                new ChatMessageDTO(chatMessage.getMatch().getMatchId(), user.getUsername(), chatMessage.getContent()));
+                new ChatMessageDTO(chatMessage.getMatch().getMatchId(), user.getNickname(), chatMessage.getContent()));
     }
 }

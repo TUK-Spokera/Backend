@@ -33,7 +33,7 @@ public class ChatRestController {
     public List<ChatMessageDTO> getChatHistory(@PathVariable Long matchId) {
         List<ChatMessage> messages = chatMessageRepository.findByMatch_MatchIdOrderBySentAtAsc(matchId);
         return messages.stream()
-                .map(msg -> new ChatMessageDTO(msg.getMatch().getMatchId(), msg.getSender().getUsername(), msg.getContent()))
+                .map(msg -> new ChatMessageDTO(msg.getMatch().getMatchId(), msg.getSender().getNickname(), msg.getContent()))
                 .collect(Collectors.toList());
     }
 
@@ -43,7 +43,7 @@ public class ChatRestController {
     @GetMapping("/rooms/{username}")
     public List<Match> getUserChatRooms(@PathVariable String username) {
         // 사용자를 조회
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByNickname(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         // 사용자가 속한 매칭방 목록 조회

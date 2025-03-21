@@ -21,7 +21,7 @@ public class UserService {
 
     // 사용자 위치 업데이트
     public User updateUserLocation(String username, Double latitude, Double longitude) {
-        Optional<User> existingUserOpt = userRepository.findByUsername(username);
+        Optional<User> existingUserOpt = userRepository.findByNickname(username);
 
         if (existingUserOpt.isPresent()) {
             User existingUser = existingUserOpt.get();
@@ -42,10 +42,10 @@ public class UserService {
 
     // 유저 위치 가져오기
     public UserLocationDTO getUserLocation(String username) {
-        Optional<User> userOpt = userRepository.findByUsername(username);
+        Optional<User> userOpt = userRepository.findByNickname(username);
         User user = userOpt.get();
         UserLocationDTO userLocationDTO = new UserLocationDTO();
-        userLocationDTO.setUsername(user.getUsername());
+        userLocationDTO.setUsername(user.getNickname());
         userLocationDTO.setLatitude(user.getLatitude());
         userLocationDTO.setLongitude(user.getLongitude());
 

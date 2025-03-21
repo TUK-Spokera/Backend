@@ -14,14 +14,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-
-    // 사용자 등록
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User user) {
         return ResponseEntity.ok(userService.registerUser(user));
     }
 
-    // 위도/경도 업데이트
     @PutMapping("/location")
     public ResponseEntity<User> updateUserLocation(@RequestBody UserLocationDTO userLocation) {
         return ResponseEntity.ok(userService.updateUserLocation(
