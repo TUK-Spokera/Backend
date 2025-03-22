@@ -1,9 +1,9 @@
 package graduation.spokera.api.service;
 
 import graduation.spokera.api.domain.user.User;
-import graduation.spokera.api.domain.user.UserRepository;
 import graduation.spokera.api.dto.user.KakaoUserResponse;
 import graduation.spokera.api.dto.user.TokenResponse;
+import graduation.spokera.api.repository.UserRepository;
 import graduation.spokera.api.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
