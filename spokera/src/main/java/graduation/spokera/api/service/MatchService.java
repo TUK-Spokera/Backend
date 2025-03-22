@@ -4,6 +4,7 @@ import graduation.spokera.api.domain.facility.Facility;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.dto.facility.FacilityResponseDTO;
 import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
 import graduation.spokera.api.dto.match.MatchRequestDTO;
 import graduation.spokera.api.domain.type.MatchStatus;
@@ -81,7 +82,7 @@ public class MatchService {
     /**
      * 특정 매칭방에 있는 사용자들의 위치를 기반으로 시설 추천
      */
-    public List<Facility> recommendFacilitiesForMatch(Long matchId) {
+    public List<FacilityResponseDTO> recommendFacilitiesForMatch(Long matchId) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("해당 매칭방을 찾을 수 없습니다."));
 

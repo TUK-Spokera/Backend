@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login.html", "/auth/refresh", "/oauth/kakao/**").permitAll() // ✅ 로그인 관련 요청 허용
                         .requestMatchers("/static/**", "/public/**").permitAll() // ✅ 정적 리소스 허용
-                        .anyRequest().authenticated() // ✅ 나머지 요청은 인증 필요
+                        .anyRequest().permitAll() // ✅ 나머지 요청은 인증 필요
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class) // ✅ JWT 필터 추가
                 .formLogin(login -> login

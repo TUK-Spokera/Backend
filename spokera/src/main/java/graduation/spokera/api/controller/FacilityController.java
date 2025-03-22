@@ -1,6 +1,7 @@
 package graduation.spokera.api.controller;
 
 import graduation.spokera.api.domain.facility.Facility;
+import graduation.spokera.api.dto.facility.FacilityResponseDTO;
 import graduation.spokera.api.repository.FacilityRepository;
 import graduation.spokera.api.dto.facility.FacilityLocationResponse;
 import graduation.spokera.api.service.FacilityService;
@@ -28,7 +29,7 @@ public class FacilityController {
      * 특정 매칭방의 사용자들을 기반으로 경기장 추천
      */
     @GetMapping("/recommend/{matchId}")
-    public List<Facility> recommendFacilitiesForMatch(@PathVariable Long matchId) {
+    public List<FacilityResponseDTO> recommendFacilitiesForMatch(@PathVariable Long matchId) {
         return matchService.recommendFacilitiesForMatch(matchId);
     }
 }

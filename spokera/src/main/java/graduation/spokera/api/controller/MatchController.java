@@ -29,10 +29,10 @@ public class MatchController {
 
     @PostMapping("/recommend")
     public ResponseEntity<List<Match>> requestMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getUsername());
-
+        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getNickname());
+        log.info("{}", matchRequestDto);
         if (userOpt.isEmpty()) {
-            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getUsername());
+            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getNickname());
             return ResponseEntity.badRequest().build();
         }
 
@@ -42,10 +42,10 @@ public class MatchController {
 
     @PostMapping("/create")
     public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getUsername());
+        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getNickname());
 
         if (userOpt.isEmpty()) {
-            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getUsername());
+            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getNickname());
             return ResponseEntity.badRequest().build();
         }
 
@@ -56,7 +56,7 @@ public class MatchController {
 
     @PostMapping("/join")
     public ResponseEntity<Boolean> joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO){
-        Optional<User> userOpt = userRepository.findByNickname(matchJoinRequestDTO.getUsername());
+        Optional<User> userOpt = userRepository.findByNickname(matchJoinRequestDTO.getNickname());
 
         Boolean joinResult = matchService.joinMatch(userOpt.get(), matchJoinRequestDTO.getMatchId());
         return ResponseEntity.ok(joinResult);

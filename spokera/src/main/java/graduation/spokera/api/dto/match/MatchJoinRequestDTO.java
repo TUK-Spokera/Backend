@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MatchJoinRequestDTO {
     public Long matchId;
-    public String username;
+    public String nickname;
 }

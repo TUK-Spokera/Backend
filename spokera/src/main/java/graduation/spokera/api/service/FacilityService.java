@@ -3,10 +3,13 @@ package graduation.spokera.api.service;
 import graduation.spokera.api.domain.facility.*;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityLocationResponse;
+import graduation.spokera.api.dto.facility.FacilityResponseDTO;
 import graduation.spokera.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.stream.Collectors;
@@ -16,8 +19,9 @@ import java.util.stream.Collectors;
 public class FacilityService {
 
     private final FacilityRepository facilityRepo;
+    private static final String NAVER_MAP_SEARCH_BASE_URL = "https://map.naver.com/p/search/";
 
-    public List<Facility> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
+    public List<FacilityResponseDTO> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
 
 //        if (locations.size() < 2) {
 //            throw new IllegalArgumentException("최소 2명의 위치 정보가 필요합니다.");
@@ -44,6 +48,17 @@ public class FacilityService {
                         calculateDistance(midLat, midLng, f2.getFaciLat(), f2.getFaciLot())
                 ))
                 .limit(maxResults)
+                .map(facility -> FacilityResponseDTO.builder()
+                        .id(facility.getId())
+                        .faciLat(facility.getFaciLat())
+                        .faciLot(facility.getFaciLot())
+                        .ftypeNm(facility.getFaciNm())
+                        .faciNm(facility.getFaciNm())
+                        .fcobNm(facility.getFcobNm())
+                        .faciAddr(facility.getFaciAddr())
+                        .url(NAVER_MAP_SEARCH_BASE_URL + URLEncoder.encode(facility.getFaciAddr() + " " + facility.getFaciNm(), StandardCharsets.UTF_8))
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 
