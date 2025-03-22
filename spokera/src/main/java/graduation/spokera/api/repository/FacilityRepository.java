@@ -1,4 +1,4 @@
-package graduation.spokera.api.domain.facility;
+package graduation.spokera.api.repository;
 
 
 import graduation.spokera.api.domain.facility.Facility;

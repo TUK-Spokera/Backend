@@ -4,9 +4,9 @@ import graduation.spokera.api.dto.chat.ChatMessageDTO;
 import graduation.spokera.api.domain.chat.ChatMessage;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.user.User;
-import graduation.spokera.api.domain.chat.ChatMessageRepository;
-import graduation.spokera.api.domain.match.MatchRepository;
-import graduation.spokera.api.domain.user.UserRepository;
+import graduation.spokera.api.repository.ChatMessageRepository;
+import graduation.spokera.api.repository.MatchRepository;
+import graduation.spokera.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Controller
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatWebSocketController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final ChatMessageRepository chatMessageRepository;

@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="/config.js"></script>
   <title>실시간 채팅</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
       text-align: center;
+      margin: 20px;
     }
     #chat-container {
       width: 400px;
@@ -44,13 +45,15 @@
 <div id="chat-container">
   <button onclick="leaveRoom()">방 나가기</button>
   <div id="messages"></div>
-  <input type="text" id="message" placeholder="메시지 입력" disabled />
-  <button onclick="sendMessage()" disabled>메시지 보내기</button>
+  <input type="text" id="message" placeholder="메시지 입력" onkeydown="handleEnter(event)"/>
+  <button onclick="sendMessage()">메시지 보내기</button>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
+  const API_BASE_URL = "http://appledolphin.xyz:8080"; // 서버 주소
+  const CHAT_HISTORY_URL = API_BASE_URL + `/api/chat/history`;
+  const CHAT_SOCKET_URL = API_BASE_URL + `/ws-chat-sockjs`;
+
   let stompClient = null;
   let username = localStorage.getItem("username");
   let roomId = localStorage.getItem("roomId");
@@ -62,45 +65,45 @@
   } else {
     document.getElementById("room-title").textContent = `${sportType} 채팅방 (${roomId})`;
     loadChatHistory();
+    connectWebSocket();
   }
 
+  // ✅ 채팅 내역 불러오기 (REST API)
   function loadChatHistory() {
     fetch(`${CHAT_HISTORY_URL}/${roomId}`)
             .then(response => response.json())
             .then(messages => {
               document.getElementById("messages").innerHTML = "";
               messages.forEach(msg => showMessage(msg.senderName, msg.content));
-              connectWebSocket();
             })
             .catch(error => console.error("채팅 내역 불러오기 실패:", error));
   }
 
+  // ✅ STOMP WebSocket 연결
   function connectWebSocket() {
     let socket = new SockJS(CHAT_SOCKET_URL);
     stompClient = Stomp.over(socket);
 
     stompClient.connect({}, function (frame) {
-      console.log("Connected: " + frame);
+      console.log("✅ WebSocket 연결 성공:", frame);
       stompClient.subscribe(`/topic/room/${roomId}`, function (message) {
         let chatMessage = JSON.parse(message.body);
         showMessage(chatMessage.senderName, chatMessage.content);
       });
-
-      document.getElementById("message").disabled = false;
-      document.querySelector("button[onclick='sendMessage()']").disabled = false;
+    }, function (error) {
+      console.error("❌ WebSocket 연결 실패:", error);
     });
   }
 
+  // ✅ 메시지 보내기
   function sendMessage() {
     let messageContent = document.getElementById("message").value.trim();
-
-    if (messageContent) {
+    if (messageContent && stompClient) {
       let chatMessage = {
         matchId: roomId,
         senderName: username,
         content: messageContent
       };
-
       stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
       document.getElementById("message").value = "";
     } else {
@@ -108,6 +111,14 @@
     }
   }
 
+  // ✅ 엔터 키 입력 시 메시지 전송
+  function handleEnter(event) {
+    if (event.key === "Enter") {
+      sendMessage();
+    }
+  }
+
+  // ✅ 메시지 화면에 표시
   function showMessage(senderName, message) {
     let messageDiv = document.getElementById("messages");
     let newMessage = document.createElement("div");
@@ -116,6 +127,7 @@
     messageDiv.scrollTop = messageDiv.scrollHeight;
   }
 
+  // ✅ 채팅방 나가기
   function leaveRoom() {
     if (stompClient !== null) {
       stompClient.disconnect();
@@ -124,6 +136,13 @@
     localStorage.removeItem("sportType");
     window.location.href = "chat-rooms";
   }
+
+  // ✅ 페이지 떠날 때 WebSocket 종료
+  window.addEventListener("beforeunload", function () {
+    if (stompClient !== null) {
+      stompClient.disconnect();
+    }
+  });
 </script>
 
 </body>

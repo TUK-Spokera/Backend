@@ -3,6 +3,7 @@ package graduation.spokera.api.service;
 import graduation.spokera.api.domain.facility.*;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityLocationResponse;
+import graduation.spokera.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

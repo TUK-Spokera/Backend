@@ -1,5 +1,7 @@
-package graduation.spokera.api.domain.match;
+package graduation.spokera.api.repository;
 
+import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.MatchType;
