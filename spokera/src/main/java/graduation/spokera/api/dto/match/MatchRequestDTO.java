@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class MatchRequestDTO {
-    private String nickname;
+    private Long userId;
     private String sportType;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

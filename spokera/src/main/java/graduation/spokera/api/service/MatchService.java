@@ -1,23 +1,25 @@
 package graduation.spokera.api.service;
 
 import graduation.spokera.api.domain.facility.Facility;
+import graduation.spokera.api.domain.facility.FacilityVote;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.user.User;
-import graduation.spokera.api.dto.facility.FacilityResponseDTO;
+import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
+import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
+import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
 import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
 import graduation.spokera.api.dto.match.MatchRequestDTO;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
-import graduation.spokera.api.repository.UserRepository;
-import graduation.spokera.api.repository.MatchParticipantRepository;
-import graduation.spokera.api.repository.MatchRepository;
+import graduation.spokera.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -34,6 +36,8 @@ public class MatchService {
     private final MatchParticipantRepository matchParticipantRepository;
     private final FacilityService facilityService;
     private final UserRepository userRepository;
+    private final FacilityRepository facilityRepository;
+    private final FacilityVoteRepository facilityVoteRepository;
 
     /**
      * 매칭방에 들어가기
@@ -82,7 +86,7 @@ public class MatchService {
     /**
      * 특정 매칭방에 있는 사용자들의 위치를 기반으로 시설 추천
      */
-    public List<FacilityResponseDTO> recommendFacilitiesForMatch(Long matchId) {
+    public List<FacilityRecommendResponseDTO> recommendFacilitiesForMatch(Long matchId) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("해당 매칭방을 찾을 수 없습니다."));
 
@@ -137,5 +141,37 @@ public class MatchService {
 
         matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
         return matches;
+    }
+
+    /**
+     * 경기장 투표
+     */
+    public FacilityVoteResponseDTO voteFacility(FacilityVoteRequestDTO facilityVoteRequestDTO){
+
+        Facility facility = facilityRepository.findByFaciId(facilityVoteRequestDTO.getFacilityId())
+                .orElseThrow(() -> new RuntimeException("시설 없음"));
+
+        User user = userRepository.findById(facilityVoteRequestDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("유저 없음"));
+
+        Match match = matchRepository.findById(facilityVoteRequestDTO.getMatchId())
+                .orElseThrow(() -> new RuntimeException("매칭 없음"));
+
+        FacilityVote facilityVote = FacilityVote.builder()
+                .facility(facility)
+                .user(user)
+                .match(match)
+                .build();
+
+        facilityVoteRepository.save(facilityVote);
+
+        FacilityVoteResponseDTO facilityVoteResponseDTO = FacilityVoteResponseDTO.builder()
+                .success(true)
+                .message("투표 성공")
+                .facilityVoteRequestDTO(facilityVoteRequestDTO)
+                .build();
+
+        return facilityVoteResponseDTO;
+
     }
 }

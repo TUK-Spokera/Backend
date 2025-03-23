@@ -1,5 +1,7 @@
 package graduation.spokera.api.controller;
 
+import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
+import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
 import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
 import graduation.spokera.api.dto.match.MatchJoinRequestDTO;
 import graduation.spokera.api.domain.match.Match;
@@ -29,10 +31,10 @@ public class MatchController {
 
     @PostMapping("/recommend")
     public ResponseEntity<List<Match>> requestMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getNickname());
+        Optional<User> userOpt = userRepository.findById(matchRequestDto.getUserId());
         log.info("{}", matchRequestDto);
         if (userOpt.isEmpty()) {
-            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getNickname());
+            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRequestDto.getUserId());
             return ResponseEntity.badRequest().build();
         }
 
@@ -42,10 +44,10 @@ public class MatchController {
 
     @PostMapping("/create")
     public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findByNickname(matchRequestDto.getNickname());
+        Optional<User> userOpt = userRepository.findById(matchRequestDto.getUserId());
 
         if (userOpt.isEmpty()) {
-            log.info("{} 사용자를 찾을 수 없습니다.", matchRequestDto.getNickname());
+            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRequestDto.getUserId());
             return ResponseEntity.badRequest().build();
         }
 
@@ -69,4 +71,13 @@ public class MatchController {
         return ResponseEntity.ok(matches);
 
     }
+
+    /**
+     * 매치의 경기장 투표
+     */
+    @PostMapping("/vote")
+    public FacilityVoteResponseDTO voteFacility(@RequestBody FacilityVoteRequestDTO facilityVoteRequestDTO){
+        return matchService.voteFacility(facilityVoteRequestDTO);
+    }
+
 }

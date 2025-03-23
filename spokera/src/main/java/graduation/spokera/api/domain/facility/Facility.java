@@ -17,7 +17,7 @@ public class Facility {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "faci_id")
-    private Integer id;
+    private Integer faciId;
 
     @Column(name = "addr_ctpv_nm", length = 255)
     private String addrCtpvNm;

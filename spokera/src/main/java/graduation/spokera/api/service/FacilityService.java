@@ -3,7 +3,7 @@ package graduation.spokera.api.service;
 import graduation.spokera.api.domain.facility.*;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityLocationResponse;
-import graduation.spokera.api.dto.facility.FacilityResponseDTO;
+import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class FacilityService {
     private final FacilityRepository facilityRepo;
     private static final String NAVER_MAP_SEARCH_BASE_URL = "https://map.naver.com/p/search/";
 
-    public List<FacilityResponseDTO> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
+    public List<FacilityRecommendResponseDTO> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
 
 //        if (locations.size() < 2) {
 //            throw new IllegalArgumentException("최소 2명의 위치 정보가 필요합니다.");
@@ -48,8 +48,8 @@ public class FacilityService {
                         calculateDistance(midLat, midLng, f2.getFaciLat(), f2.getFaciLot())
                 ))
                 .limit(maxResults)
-                .map(facility -> FacilityResponseDTO.builder()
-                        .id(facility.getId())
+                .map(facility -> FacilityRecommendResponseDTO.builder()
+                        .id(facility.getFaciId())
                         .faciLat(facility.getFaciLat())
                         .faciLot(facility.getFaciLot())
                         .ftypeNm(facility.getFaciNm())
@@ -84,4 +84,5 @@ public class FacilityService {
         return facilityRepo.findByFaciNm(faciNm)
                 .orElseThrow(() -> new IllegalArgumentException("해당 경기장을 찾을 수 없습니다: " + faciNm));
     }
+    
 }

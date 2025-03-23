@@ -1,8 +1,6 @@
 package graduation.spokera.api.dto.facility;
 
 
-import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +11,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-public class FacilityResponseDTO {
+public class FacilityRecommendResponseDTO {
     private Integer id;
     private Double faciLat;
     private Double faciLot;

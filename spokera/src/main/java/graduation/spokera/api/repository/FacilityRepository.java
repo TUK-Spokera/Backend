@@ -12,4 +12,7 @@ public interface FacilityRepository extends JpaRepository<Facility, Integer> {
     List<Facility> findTop100ByAddrCtpvNm(String addrCtpvNm);
     List<Facility> findByFtypeNmContaining(String ftypeNm);
     Optional<Facility> findByFaciNm(String faciNm);
+
+    Optional<Facility> findByFaciId(Integer faciId);
+
 }
