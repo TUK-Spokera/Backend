@@ -56,7 +56,7 @@ public class MatchController {
 
     @PostMapping("/join")
     public ResponseEntity<Boolean> joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO){
-        Optional<User> userOpt = userRepository.findByNickname(matchJoinRequestDTO.getNickname());
+        Optional<User> userOpt = userRepository.findById(matchJoinRequestDTO.getUserId());
 
         Boolean joinResult = matchService.joinMatch(userOpt.get(), matchJoinRequestDTO.getMatchId());
         return ResponseEntity.ok(joinResult);
