@@ -4,6 +4,7 @@ import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.domain.user.UserRepository;
 import graduation.spokera.api.dto.user.KakaoUserResponse;
 import graduation.spokera.api.dto.user.TokenResponse;
+import graduation.spokera.api.dto.user.UserInfoResponse;
 import graduation.spokera.api.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -26,7 +28,7 @@ public class AuthService {
     @Value("${spring.social.kakao.base-url}")
     private String kakaoBaseUrl;
 
-    @Value("${spring.social.kakao.client-id}") // ✅ spring 유지
+    @Value("${spring.social.kakao.client-id}")
     private String kakaoClientId;
 
     @Value("${spring.social.kakao.redirect}")
@@ -41,47 +43,57 @@ public class AuthService {
     public TokenResponse kakaoLogin(String code) {
         System.out.println("✅ [카카오 로그인] 인가 코드 수신: " + code);
 
-        String kakaoAccessToken = getKakaoAccessToken(code);
-        if (kakaoAccessToken == null) {
-            System.out.println("❌ [카카오 로그인] 액세스 토큰 발급 실패");
-            return null;
-        }
+        Map<String, Object> tokenMap = getKakaoTokenMap(code);
+        if (tokenMap == null) return null;
 
+        String kakaoAccessToken = (String) tokenMap.get("access_token");
+        if (kakaoAccessToken == null) return null;
+
+        // 1. 카카오 사용자 정보 조회
         KakaoUserResponse kakaoUser = getKakaoUserInfo(kakaoAccessToken);
-        if (kakaoUser == null) {
-            System.out.println("❌ [카카오 로그인] 사용자 정보 조회 실패");
-            return null;
-        }
+        if (kakaoUser == null) return null;
 
+        // 2. 유저 저장
         User user = saveOrUpdateUser(kakaoUser);
-        System.out.println("✅ [카카오 로그인] 사용자 저장 완료: " + user.getNickname() + " (" + user.getEmail() + ")");
+        System.out.println("✅ [카카오 로그인] 사용자 저장 완료: " + user.getNickname());
 
-        TokenResponse tokenResponse = jwtUtil.generateTokens(user);
-        System.out.println("✅ [카카오 로그인] JWT 발급 완료 - Access Token: " + tokenResponse.getAccessToken());
+        // 3. ✅ 서버 JWT 발급
+        TokenResponse jwtToken = jwtUtil.generateTokens(user);
+        System.out.println("✅ [서버 JWT 발급] Access: " + jwtToken.getAccessToken());
 
-        return tokenResponse;
+        return jwtToken;
     }
 
-    private String getKakaoAccessToken(String code) {
+
+    private Map<String, Object> getKakaoTokenMap(String code) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", kakaoClientId);
-        params.add("redirect_uri",  kakaoBaseUrl + kakaoRedirectUri);
+        params.add("redirect_uri", kakaoBaseUrl + kakaoRedirectUri);
         params.add("code", code);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(kakaoTokenUrl, request, Map.class);
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            System.out.println("❌ [카카오 로그인] 액세스 토큰 요청 실패: " + response.getStatusCode());
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(kakaoTokenUrl, request, Map.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                System.out.println("❌ [카카오 로그인] 액세스 토큰 요청 실패: " + response.getStatusCode());
+                System.out.println("❌ 응답 바디: " + response.getBody());
+                return null;
+            }
+
+            System.out.println("✅ [카카오 로그인] 액세스 토큰 발급 성공");
+            System.out.println("🔎 토큰 응답 전체: " + response.getBody());
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            System.out.println("❌ [카카오 로그인] RestTemplate 예외 발생: " + e.getMessage());
             return null;
         }
-
-        System.out.println("✅ [카카오 로그인] 액세스 토큰 발급 성공");
-        return response.getBody().get("access_token").toString();
     }
 
     private KakaoUserResponse getKakaoUserInfo(String accessToken) {
@@ -89,37 +101,37 @@ public class AuthService {
         headers.set("Authorization", "Bearer " + accessToken);
 
         HttpEntity<String> request = new HttpEntity<>(headers);
-        ResponseEntity<Map> response = restTemplate.exchange(kakaoProfileUrl, HttpMethod.GET, request, Map.class);
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            System.out.println("❌ [카카오 로그인] 사용자 정보 요청 실패: " + response.getStatusCode());
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(kakaoProfileUrl, HttpMethod.GET, request, Map.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                System.out.println("❌ [카카오 로그인] 사용자 정보 요청 실패: " + response.getStatusCode());
+                return null;
+            }
+
+            System.out.println("✅ [카카오 로그인] 카카오 사용자 정보 응답: " + response.getBody());
+
+            Map<String, Object> kakaoAccount = (Map<String, Object>) response.getBody().get("kakao_account");
+            Map<String, Object> profile = kakaoAccount != null ? (Map<String, Object>) kakaoAccount.get("profile") : null;
+
+            if (kakaoAccount == null || profile == null) {
+                System.out.println("❌ [카카오 로그인] 사용자 계정 정보 또는 프로필 정보가 없음");
+                return null;
+            }
+
+            KakaoUserResponse userResponse = new KakaoUserResponse();
+            userResponse.setId(Long.valueOf(response.getBody().get("id").toString()));
+            userResponse.setNickname(profile.get("nickname") != null ? profile.get("nickname").toString() : "Unknown");
+            userResponse.setEmail(kakaoAccount.get("email") != null ? kakaoAccount.get("email").toString() : "no-email");
+
+            System.out.println("✅ [카카오 로그인] 사용자 정보 조회 완료: " + userResponse.getNickname() + " / " + userResponse.getEmail());
+            return userResponse;
+        } catch (RestClientException e) {
+            System.out.println("❌ [카카오 로그인] 사용자 정보 조회 RestTemplate 예외: " + e.getMessage());
             return null;
         }
-
-        System.out.println("✅ [카카오 로그인] 카카오 사용자 정보 응답: " + response.getBody());
-
-        // ✅ 응답 데이터를 확인 후, `null` 체크하여 예외 방지
-        Map<String, Object> kakaoAccount = (Map<String, Object>) response.getBody().get("kakao_account");
-        if (kakaoAccount == null) {
-            System.out.println("❌ [카카오 로그인] `kakao_account` 정보가 없음");
-            return null;
-        }
-
-        Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-        if (profile == null) {
-            System.out.println("❌ [카카오 로그인] `profile` 정보가 없음");
-            return null;
-        }
-
-        KakaoUserResponse userResponse = new KakaoUserResponse();
-        userResponse.setId(Long.valueOf(response.getBody().get("id").toString()));
-        userResponse.setNickname(profile.get("nickname") != null ? profile.get("nickname").toString() : "Unknown");
-        userResponse.setEmail(kakaoAccount.get("email") != null ? kakaoAccount.get("email").toString() : "no-email");
-
-        System.out.println("✅ [카카오 로그인] 사용자 정보 조회 완료: " + userResponse.getNickname() + " / " + userResponse.getEmail());
-        return userResponse;
     }
-
 
     private User saveOrUpdateUser(KakaoUserResponse kakaoUser) {
         return userRepository.findByKakaoId(String.valueOf(kakaoUser.getId()))
@@ -139,16 +151,33 @@ public class AuthService {
     }
 
     public TokenResponse refreshAccessToken(String refreshToken) {
-        if (!jwtUtil.validateToken(refreshToken) || !jwtUtil.isRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+        System.out.println("🔁 [리프레시 토큰 요청] refreshToken: " + refreshToken);
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("❌ 유효하지 않은 JWT 형식의 리프레시 토큰입니다.");
+        }
+
+        if (!jwtUtil.isRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("❌ 이 토큰은 리프레시 토큰이 아닙니다.");
         }
 
         String userId = jwtUtil.getUserIdFromToken(refreshToken);
+        System.out.println("🔎 리프레시 토큰에서 유저 ID 추출: " + userId);
+
         User user = userRepository.findById(Long.parseLong(userId))
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("❌ 유저를 찾을 수 없습니다."));
 
         String newAccessToken = jwtUtil.generateAccessToken(user);
-        return new TokenResponse(newAccessToken, refreshToken); // 리프레시 토큰은 재사용
+        System.out.println("✅ [토큰 재발급] 새로운 Access Token: " + newAccessToken);
+        return new TokenResponse(newAccessToken, refreshToken);
     }
+
+    public UserInfoResponse getUserInfoById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+
+        return new UserInfoResponse(user.getId(), user.getEmail(), user.getNickname());
+    }
+
 
 }

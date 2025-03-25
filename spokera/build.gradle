@@ -54,6 +54,12 @@ dependencies {
 
 	// REST API 호출용 (RestTemplate, WebClient)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// Redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.apache.commons:commons-pool2' // Lettuce 커넥션 풀
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 }
 
 tasks.named('test') {

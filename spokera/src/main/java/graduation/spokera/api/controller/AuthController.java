@@ -1,10 +1,18 @@
 package graduation.spokera.api.controller;
 
 import graduation.spokera.api.dto.user.TokenResponse;
+import graduation.spokera.api.dto.user.UserInfoResponse;
 import  graduation.spokera.api.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequiredArgsConstructor
@@ -12,11 +20,54 @@ public class AuthController {
 
     private final AuthService authService;
 
+//    @GetMapping("/oauth/kakao/redirect")
+//    public ResponseEntity<TokenResponse> kakaoLogin(@RequestParam("code") String code) {
+//        TokenResponse tokenResponse = authService.kakaoLogin(code);
+//        return ResponseEntity.ok(tokenResponse);
+//    }
+
+//    @GetMapping("/oauth/kakao/redirect")
+//    public RedirectView kakaoLogin(@RequestParam("code") String code) {
+//        TokenResponse tokenResponse = authService.kakaoLogin(code);
+//
+//        String redirectUri = String.format(
+//                "spokera://login/success?accessToken=%s&refreshToken=%s",
+//                tokenResponse.getAccessToken(),
+//                tokenResponse.getRefreshToken()
+//        );
+//
+//        return new RedirectView(redirectUri);
+//    }
+
+//    @GetMapping("/oauth/kakao/redirect")
+//    public RedirectView kakaoLogin(@RequestParam("code") String code) {
+//        TokenResponse tokenResponse = authService.kakaoLogin(code);
+//
+//        String redirectUri = String.format(
+//                "spokera://login/success?accessToken=%s&refreshToken=%s",
+//                tokenResponse.getAccessToken(),
+//                tokenResponse.getRefreshToken()
+//        );
+//
+//        return new RedirectView(redirectUri);
+//    }
+
     @GetMapping("/oauth/kakao/redirect")
-    public ResponseEntity<TokenResponse> kakaoLogin(@RequestParam("code") String code) {
+    public ResponseEntity<Void> kakaoLogin(@RequestParam("code") String code) {
         TokenResponse tokenResponse = authService.kakaoLogin(code);
-        return ResponseEntity.ok(tokenResponse);
+
+        String redirectUri = String.format(
+                "spokera://login/callback?accessToken=%s&refreshToken=%s",
+                URLEncoder.encode(tokenResponse.getAccessToken(), StandardCharsets.UTF_8),
+                URLEncoder.encode(tokenResponse.getRefreshToken(), StandardCharsets.UTF_8)
+        );
+
+        return ResponseEntity.status(302)  // 👈 302로 리다이렉트
+                .location(URI.create(redirectUri))
+                .build();
     }
+
+
 
     @PostMapping("/auth/refresh")
     public ResponseEntity<TokenResponse> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
@@ -24,5 +75,14 @@ public class AuthController {
         TokenResponse newTokens = authService.refreshAccessToken(refreshToken);
         return ResponseEntity.ok(newTokens);
     }
+
+    @GetMapping("/user/me")
+    public ResponseEntity<UserInfoResponse> getCurrentUser() {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName(); // userId 그대로 들어있음
+        UserInfoResponse userInfo = authService.getUserInfoById(Long.parseLong(userId));
+        return ResponseEntity.ok(userInfo);
+    }
+
+
 }
 
