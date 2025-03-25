@@ -6,7 +6,7 @@ import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.service.MatchService;
 import graduation.spokera.api.domain.user.User;
-import graduation.spokera.api.repository.UserRepository;
+import graduation.spokera.api.domain.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

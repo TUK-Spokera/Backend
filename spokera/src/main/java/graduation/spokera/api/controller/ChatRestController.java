@@ -7,7 +7,7 @@ import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.repository.ChatMessageRepository;
 import graduation.spokera.api.repository.MatchParticipantRepository;
-import graduation.spokera.api.repository.UserRepository;
+import graduation.spokera.api.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
