@@ -4,12 +4,12 @@ import graduation.spokera.api.domain.facility.Facility;
 import graduation.spokera.api.domain.facility.FacilityVote;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
+import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
 import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
-import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
-import graduation.spokera.api.dto.match.MatchRequestDTO;
+import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
 import graduation.spokera.api.repository.*;
@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -173,5 +174,42 @@ public class MatchService {
 
         return facilityVoteResponseDTO;
 
+    }
+
+
+    /**
+     *
+     *  경기 결과 입력
+     */
+    public MatchResultInputResponseDTO inputMatchResult(MatchResultInputRequestDTO requestDTO) {
+        MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
+        responseDTO.setMatchId(requestDTO.getMatchId());
+
+        Match match = matchRepository.findById(requestDTO.getMatchId())
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+        User user = userRepository.findById(requestDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 새로운 제출 정보를 생성하여 저장
+        MatchSubmissionDTO submission = MatchSubmissionDTO.builder()
+                .user(user)
+                .matchResult(requestDTO.getMatchResult())
+                .build();
+        MatchSubmissionMemoryStore.addSubmission(requestDTO.getMatchId(), submission);
+
+        // 해당 매치의 제출 내역 조회
+        List<MatchSubmissionDTO> submissions = MatchSubmissionMemoryStore.getSubmissions(requestDTO.getMatchId());
+        responseDTO.setSubmissions(submissions);
+
+        // 매치 완료 여부 체크 (예: ONE_VS_ONE이면 2건, TWO_VS_TWO이면 4건 이상이면 완료)
+        int submissionCount = submissions.size();
+        if ((match.getMatchType() == MatchType.ONE_VS_ONE && submissionCount >= 2) ||
+                (match.getMatchType() == MatchType.TWO_VS_TWO && submissionCount >= 4)) {
+            responseDTO.setMatchCompleted(true);
+        } else {
+            responseDTO.setMatchCompleted(false);
+        }
+
+        return responseDTO;
     }
 }

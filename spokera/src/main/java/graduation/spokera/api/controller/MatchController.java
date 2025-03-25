@@ -2,10 +2,8 @@ package graduation.spokera.api.controller;
 
 import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
 import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
-import graduation.spokera.api.dto.match.MatchCreateResponseDTO;
-import graduation.spokera.api.dto.match.MatchJoinRequestDTO;
+import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.match.Match;
-import graduation.spokera.api.dto.match.MatchRequestDTO;
 import graduation.spokera.api.service.MatchService;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.repository.UserRepository;
@@ -80,4 +78,17 @@ public class MatchController {
         return matchService.voteFacility(facilityVoteRequestDTO);
     }
 
+    /**
+     * 경기 승패 결과 입력
+     */
+    @PostMapping("/result-input")
+    public MatchResultInputResponseDTO inputMatchResult(@RequestBody MatchResultInputRequestDTO matchResultInputRequestDTO){
+        return matchService.inputMatchResult(matchResultInputRequestDTO);
+    }
+
+    /**
+     * 경기 승패 결과 입력한사람 리스트
+     */
+//    @GetMapping("/result-status/{matchId}")
+//    public
 }
