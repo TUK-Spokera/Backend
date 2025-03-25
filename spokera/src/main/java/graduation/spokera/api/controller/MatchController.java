@@ -89,6 +89,8 @@ public class MatchController {
     /**
      * 경기 승패 결과 입력한사람 리스트
      */
-//    @GetMapping("/result-status/{matchId}")
-//    public
+    @GetMapping("/result-status/{matchId}")
+    public MatchResultInputResponseDTO matchResultStatus(@PathVariable Long matchId){
+        return matchService.getMatchResultStatus(matchId);
+    }
 }

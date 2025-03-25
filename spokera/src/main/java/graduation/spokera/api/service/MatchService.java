@@ -13,6 +13,7 @@ import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
 import graduation.spokera.api.domain.user.UserRepository;
+import graduation.spokera.api.dto.user.UserBasicInfoDTO;
 import graduation.spokera.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -189,11 +190,14 @@ public class MatchService {
         User user = userRepository.findById(requestDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        UserBasicInfoDTO userBasicInfoDTO = new UserBasicInfoDTO(user.getId(), user.getNickname());
+
         // 새로운 제출 정보를 생성하여 저장
         MatchSubmissionDTO submission = MatchSubmissionDTO.builder()
-                .user(user)
+                .user(userBasicInfoDTO)
                 .matchResult(requestDTO.getMatchResult())
                 .build();
+
         MatchSubmissionMemoryStore.addSubmission(requestDTO.getMatchId(), submission);
 
         // 해당 매치의 제출 내역 조회
@@ -210,5 +214,27 @@ public class MatchService {
         }
 
         return responseDTO;
+    }
+
+    public MatchResultInputResponseDTO getMatchResultStatus(Long matchId) {
+
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        MatchResultInputResponseDTO matchResultInputResponseDTO = new MatchResultInputResponseDTO();
+        List<MatchSubmissionDTO> submissions = MatchSubmissionMemoryStore.getSubmissions(matchId);
+        matchResultInputResponseDTO.setMatchId(matchId);
+        matchResultInputResponseDTO.setSubmissions(submissions);
+
+        // 매치 완료 여부 체크 (예: ONE_VS_ONE이면 2건, TWO_VS_TWO이면 4건 이상이면 완료)
+        int submissionCount = submissions.size();
+        if ((match.getMatchType() == MatchType.ONE_VS_ONE && submissionCount >= 2) ||
+                (match.getMatchType() == MatchType.TWO_VS_TWO && submissionCount >= 4)) {
+            matchResultInputResponseDTO.setMatchCompleted(true);
+        } else {
+            matchResultInputResponseDTO.setMatchCompleted(false);
+        }
+
+        return matchResultInputResponseDTO;
     }
 }
