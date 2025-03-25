@@ -15,7 +15,6 @@ public class FacilityRecommendResponseDTO {
     private Integer id;
     private Double faciLat;
     private Double faciLot;
-    private String ftypeNm;
     private String faciNm;
     private String fcobNm;
     private String faciAddr;

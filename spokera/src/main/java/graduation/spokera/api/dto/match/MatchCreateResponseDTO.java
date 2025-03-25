@@ -9,4 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MatchCreateResponseDTO {
     private Long matchId;
+    private boolean success;
+    private String message;
 }
