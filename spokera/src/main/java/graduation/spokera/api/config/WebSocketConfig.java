@@ -1,9 +1,10 @@
 package graduation.spokera.api.config;
 
 import graduation.spokera.api.util.JwtUtil;
-import graduation.spokera.api.util.JwtHandshakeInterceptor;
+import graduation.spokera.api.util.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
 
@@ -13,6 +14,7 @@ import org.springframework.web.socket.config.annotation.*;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtUtil jwtUtil;
+    private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -23,8 +25,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws") // 통합된 WebSocket 엔드포인트
-                .addInterceptors(new JwtHandshakeInterceptor(jwtUtil))
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompAuthChannelInterceptor); // ✅ STOMP CONNECT 인증 인터셉터 등록
     }
 }
