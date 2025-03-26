@@ -20,38 +20,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-//    @GetMapping("/oauth/kakao/redirect")
-//    public ResponseEntity<TokenResponse> kakaoLogin(@RequestParam("code") String code) {
-//        TokenResponse tokenResponse = authService.kakaoLogin(code);
-//        return ResponseEntity.ok(tokenResponse);
-//    }
-
-//    @GetMapping("/oauth/kakao/redirect")
-//    public RedirectView kakaoLogin(@RequestParam("code") String code) {
-//        TokenResponse tokenResponse = authService.kakaoLogin(code);
-//
-//        String redirectUri = String.format(
-//                "spokera://login/success?accessToken=%s&refreshToken=%s",
-//                tokenResponse.getAccessToken(),
-//                tokenResponse.getRefreshToken()
-//        );
-//
-//        return new RedirectView(redirectUri);
-//    }
-
-//    @GetMapping("/oauth/kakao/redirect")
-//    public RedirectView kakaoLogin(@RequestParam("code") String code) {
-//        TokenResponse tokenResponse = authService.kakaoLogin(code);
-//
-//        String redirectUri = String.format(
-//                "spokera://login/success?accessToken=%s&refreshToken=%s",
-//                tokenResponse.getAccessToken(),
-//                tokenResponse.getRefreshToken()
-//        );
-//
-//        return new RedirectView(redirectUri);
-//    }
-
     @GetMapping("/oauth/kakao/redirect")
     public ResponseEntity<Void> kakaoLogin(@RequestParam("code") String code) {
         TokenResponse tokenResponse = authService.kakaoLogin(code);

@@ -20,7 +20,6 @@ public class CorsConfig {
         config.setAllowedOriginPatterns(List.of("*")); // 모든 도메인 허용
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용 (GET, POST, PUT, DELETE, OPTIONS 등)
-
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
