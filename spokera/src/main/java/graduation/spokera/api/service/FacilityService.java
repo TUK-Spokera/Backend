@@ -52,7 +52,6 @@ public class FacilityService {
                         .id(facility.getFaciId())
                         .faciLat(facility.getFaciLat())
                         .faciLot(facility.getFaciLot())
-                        .ftypeNm(facility.getFaciNm())
                         .faciNm(facility.getFaciNm())
                         .fcobNm(facility.getFcobNm())
                         .faciAddr(facility.getFaciAddr())
