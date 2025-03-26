@@ -1,14 +1,10 @@
 package graduation.spokera.api.service;
 
-import graduation.spokera.api.domain.facility.Facility;
-import graduation.spokera.api.domain.facility.FacilityVote;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
-import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
-import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
 import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
@@ -38,7 +34,6 @@ public class MatchService {
     private final FacilityService facilityService;
     private final UserRepository userRepository;
     private final FacilityRepository facilityRepository;
-    private final FacilityVoteRepository facilityVoteRepository;
 
     /**
      * 매칭방에 들어가기
@@ -143,39 +138,6 @@ public class MatchService {
         matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
         return matches;
     }
-
-    /**
-     * 경기장 투표
-     */
-    public FacilityVoteResponseDTO voteFacility(FacilityVoteRequestDTO facilityVoteRequestDTO){
-
-        Facility facility = facilityRepository.findByFaciId(facilityVoteRequestDTO.getFacilityId())
-                .orElseThrow(() -> new RuntimeException("시설 없음"));
-
-        User user = userRepository.findById(facilityVoteRequestDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("유저 없음"));
-
-        Match match = matchRepository.findById(facilityVoteRequestDTO.getMatchId())
-                .orElseThrow(() -> new RuntimeException("매칭 없음"));
-
-        FacilityVote facilityVote = FacilityVote.builder()
-                .facility(facility)
-                .user(user)
-                .match(match)
-                .build();
-
-        facilityVoteRepository.save(facilityVote);
-
-        FacilityVoteResponseDTO facilityVoteResponseDTO = FacilityVoteResponseDTO.builder()
-                .success(true)
-                .message("투표 성공")
-                .facilityVoteRequestDTO(facilityVoteRequestDTO)
-                .build();
-
-        return facilityVoteResponseDTO;
-
-    }
-
 
     /**
      *

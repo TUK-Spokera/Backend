@@ -1,7 +1,5 @@
 package graduation.spokera.api.controller;
 
-import graduation.spokera.api.dto.facility.FacilityVoteRequestDTO;
-import graduation.spokera.api.dto.facility.FacilityVoteResponseDTO;
 import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.service.MatchService;
@@ -68,14 +66,6 @@ public class MatchController {
 
         return ResponseEntity.ok(matches);
 
-    }
-
-    /**
-     * 매치의 경기장 투표
-     */
-    @PostMapping("/vote")
-    public FacilityVoteResponseDTO voteFacility(@RequestBody FacilityVoteRequestDTO facilityVoteRequestDTO){
-        return matchService.voteFacility(facilityVoteRequestDTO);
     }
 
     /**
