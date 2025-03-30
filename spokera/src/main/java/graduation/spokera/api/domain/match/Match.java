@@ -1,7 +1,9 @@
 package graduation.spokera.api.domain.match;
 
+import graduation.spokera.api.domain.type.MatchResult;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.MatchType;
+import graduation.spokera.api.domain.type.TeamType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,5 +36,8 @@ public class Match {
 
     @Transient
     private Integer recommendationScore;
+
+    @Enumerated(EnumType.STRING)
+    private TeamType winnerTeam;
 
 }

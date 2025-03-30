@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 매치 승패 결과 입력한거 임시로 저장해두는곳
+ */
 public class MatchSubmissionMemoryStore {
 
     // matchId를 key로, 해당 매치에 제출된 MatchSubmissionDTO 리스트를 저장
