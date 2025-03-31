@@ -4,6 +4,7 @@ import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
+import graduation.spokera.api.dto.user.MatchHistoryProjectionDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +31,19 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
 
     List<Match> findByStatus(MatchStatus matchStatus);
+
+    @Query("""
+    SELECT new graduation.spokera.api.dto.user.MatchHistoryProjectionDTO(
+        m.matchId,
+        m.sportType,
+        m.startTime,
+        m.endTime,
+        CASE WHEN m.winnerTeam = mp.team THEN 'WIN' ELSE 'LOSE' END
+    )
+    FROM Match m
+    JOIN MatchParticipant mp ON mp.match = m
+    WHERE mp.user.id = :userId
+    """)
+    List<MatchHistoryProjectionDTO> getUserMatchHistory(@io.lettuce.core.dynamic.annotation.Param("userId") Long userId);
+
 }

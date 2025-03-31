@@ -2,6 +2,7 @@ package graduation.spokera.api.controller;
 
 import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.match.Match;
+import graduation.spokera.api.dto.user.MatchHistoryProjectionDTO;
 import graduation.spokera.api.service.MatchService;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.domain.user.UserRepository;
@@ -82,5 +83,14 @@ public class MatchController {
     @GetMapping("/result-status/{matchId}")
     public MatchResultInputResponseDTO matchResultStatus(@PathVariable Long matchId){
         return matchService.getMatchResultStatus(matchId);
+    }
+
+    /**
+     * 대전기록 불러오기
+     */
+    @GetMapping("/history/{userId}")
+    public List<MatchHistoryProjectionDTO> matchHistory(@PathVariable Long userId){
+        List<MatchHistoryProjectionDTO> userMatchHistory = matchService.getMatchHistory(userId);
+        return userMatchHistory;
     }
 }

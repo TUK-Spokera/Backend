@@ -10,6 +10,7 @@ import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
 import graduation.spokera.api.domain.user.UserRepository;
+import graduation.spokera.api.dto.user.MatchHistoryProjectionDTO;
 import graduation.spokera.api.dto.user.UserSubmissionInfoDTO;
 import graduation.spokera.api.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -255,4 +256,7 @@ public class MatchService {
     }
 
 
+    public List<MatchHistoryProjectionDTO> getMatchHistory(Long userId) {
+        return matchRepository.getUserMatchHistory(userId);
+    }
 }
