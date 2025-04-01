@@ -32,6 +32,10 @@ public class Match {
     @Enumerated(EnumType.STRING)
     private MatchType matchType;
 
+    // ✅ 경기장 투표로 결정된 최종 경기장 이름
+    @Column(name = "selected_facility_name")
+    private String selectedFacilityName;
+
     @Transient
     private Integer recommendationScore;
 

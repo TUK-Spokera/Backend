@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserLocationDTO {
     private String userId;
+    private String matchId;
     private String username;
     private Double latitude;
     private Double longitude;

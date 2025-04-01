@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/location")
@@ -20,8 +21,11 @@ public class LocationQueryController {
         return locationStore.getLocation(userId);
     }
 
-    @GetMapping("/all")
-    public Collection<UserLocationDTO> getAllUserLocations() {
-        return locationStore.getAllLocations().values();
+    @GetMapping("/team/{teamId}")
+    public List<UserLocationDTO> getLocationsByTeam(@PathVariable String teamId) {
+        return locationStore.getAllLocations().values().stream()
+                .filter(loc -> teamId.equals(loc.getMatchId()))
+                .toList();
     }
+
 }
