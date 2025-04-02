@@ -31,18 +31,19 @@ public class LocationSocketController {
         String userId = String.valueOf(user.getId());
         String nickname = user.getNickname();
 
-        // 🧠 teamId는 CONNECT 시 세션에 저장된 값
-        String teamId = (String) sessionAttributes.get("teamId");
+        // 🧠 matchId는 CONNECT 시 세션에 저장된 값
+        String matchId = (String) sessionAttributes.get("matchId");
 
         // 📝 로그
         System.out.println("📥 [위치 수신]");
         System.out.println("👤 userId: " + userId);
         System.out.println("🧑 nickname: " + nickname);
-        System.out.println("👥 teamId: " + teamId);
+        System.out.println("👥 matchId: " + matchId);
         System.out.println("📍 좌표: (" + location.getLatitude() + ", " + location.getLongitude() + ")");
 
         // 🛠 DTO에 추가 정보 세팅
         location.setUserId(userId);
+        location.setMatchId(matchId);
         location.setUsername(nickname);
         location.setTimestamp(System.currentTimeMillis());
 
@@ -50,7 +51,7 @@ public class LocationSocketController {
         locationStore.updateLocation(userId, location);
 
         // 📡 브로드캐스트
-        messagingTemplate.convertAndSend("/topic/team/" + teamId, location);
+        messagingTemplate.convertAndSend("/topic/match/" + matchId, location);
         System.out.println("📤 전송 데이터: " + location);
 
     }

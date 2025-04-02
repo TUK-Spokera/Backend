@@ -1,6 +1,5 @@
 package graduation.spokera.api.config;
 
-import graduation.spokera.api.util.JwtUtil;
 import graduation.spokera.api.util.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +12,6 @@ import org.springframework.web.socket.config.annotation.*;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final JwtUtil jwtUtil;
     private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
 
     @Override

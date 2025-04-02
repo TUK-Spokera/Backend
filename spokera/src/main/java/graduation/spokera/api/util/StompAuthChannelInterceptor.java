@@ -31,7 +31,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             String token = accessor.getFirstNativeHeader("Authorization");
-            String teamId = accessor.getFirstNativeHeader("teamId"); // ⬅ teamId도 받기
+            String matchId = accessor.getFirstNativeHeader("matchId"); // ⬅ matchId
 
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
@@ -46,10 +46,10 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                     // ✅ Principal로 User 전체 넣기
                     accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, List.of()));
 
-                    // ✅ teamId 세션에 저장
-                    if (teamId != null) {
-                        accessor.getSessionAttributes().put("teamId", teamId);
-                        System.out.println("📌 teamId 세션에 저장: " + teamId);
+                    // ✅ matchId 세션에 저장
+                    if (matchId != null) {
+                        accessor.getSessionAttributes().put("matchId", matchId);
+                        System.out.println("📌 matchId 세션에 저장: " + matchId);
                     }
 
                 } else {
