@@ -61,13 +61,6 @@ public class MatchController {
         return ResponseEntity.ok(joinResult);
     }
 
-    @GetMapping("/wait-list")
-    public ResponseEntity<List<Match>> responseWaitingMatches(){
-        List<Match> matches = matchService.getWaitingMatches();
-
-        return ResponseEntity.ok(matches);
-
-    }
 
     /**
      * 경기 승패 결과 입력
@@ -75,14 +68,6 @@ public class MatchController {
     @PostMapping("/result-input")
     public MatchResultInputResponseDTO inputMatchResult(@RequestBody MatchResultInputRequestDTO matchResultInputRequestDTO){
         return matchService.inputMatchResult(matchResultInputRequestDTO);
-    }
-
-    /**
-     * 경기 승패 결과 입력한사람 리스트
-     */
-    @GetMapping("/result-status/{matchId}")
-    public MatchResultInputResponseDTO matchResultStatus(@PathVariable Long matchId){
-        return matchService.getMatchResultStatus(matchId);
     }
 
     /**

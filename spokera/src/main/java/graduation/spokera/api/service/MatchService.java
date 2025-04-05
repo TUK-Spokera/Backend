@@ -2,6 +2,7 @@ package graduation.spokera.api.service;
 
 import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
+import graduation.spokera.api.domain.match.SetScore;
 import graduation.spokera.api.domain.type.MatchResult;
 import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
@@ -37,9 +38,10 @@ public class MatchService {
     private final FacilityService facilityService;
     private final UserRepository userRepository;
     private final FacilityRepository facilityRepository;
+    private final SetScoreRepository setScoreRepository;
 
     /**
-     * 매칭방에 들어가기
+     * 매치 조인
      */
     @Transactional
     public Boolean joinMatch(User user, Long matchId) {
@@ -49,7 +51,7 @@ public class MatchService {
         match.setStatus(MatchStatus.MATCHED);
         matchRepository.save(match);
 
-        // 매칭에 유저 들어감
+        // 매치에 유저 들어감
         MatchParticipant matchParticipant = MatchParticipant.builder()
                 .match(match)
                 .team(TeamType.BLUE)
@@ -63,14 +65,14 @@ public class MatchService {
     }
 
     /**
-     * 매칭방 생성
+     * 매치 생성
      */
     @Transactional
     public MatchCreateResponseDTO createMatch(MatchRequestDTO matchRequestDto, User user) {
         Match match = setMatch(matchRequestDto, user);
         matchRepository.save(match);
 
-        log.info("새로운 매칭방 생성 : {}", match);
+        log.info("새로운 매치 생성 : {}", match);
 
         // 경기멤버 저장
         MatchParticipant matchParticipant = setMatchParticipant(user, match, TeamType.RED);
@@ -83,11 +85,11 @@ public class MatchService {
     }
 
     /**
-     * 특정 매칭방에 있는 사용자들의 위치를 기반으로 시설 추천
+     * 특정 매치에 있는 사용자들의 위치를 기반으로 시설 추천
      */
     public List<FacilityRecommendResponseDTO> recommendFacilitiesForMatch(Long matchId) {
         Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RuntimeException("해당 매칭방을 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("해당 매치를 찾을 수 없습니다."));
 
         if (match.getStatus() != MatchStatus.MATCHED) {
             throw new RuntimeException("아직 매칭되지 않은 경기입니다.");
@@ -100,7 +102,7 @@ public class MatchService {
                 .collect(Collectors.toList());
 
         if (users.isEmpty()) {
-            throw new RuntimeException("매칭방에 참여한 사용자가 없습니다.");
+            throw new RuntimeException("매치에 참여한 사용자가 없습니다.");
         }
 
         // 활용하여 시설 추천
@@ -123,15 +125,12 @@ public class MatchService {
         match.setEndTime(matchRequestDto.getEndTime());
         match.setMatchType(matchRequestDto.getMatchType());
         match.setStatus(MatchStatus.WAITING);
-//        match.setRecommendationScore(ThreadLocalRandom.current().nextInt(0, 11));
         return match;
     }
 
-    public List<Match> getWaitingMatches() {
-//        return matchRepository.findByStatus(MatchStatus.WAITING);
-        return matchRepository.findByStatus(MatchStatus.WAITING);
-    }
-
+    /**
+     * 경기 추천 (TODO: 랜덤방식 -> 추천)
+     */
     public List<Match> getRecommendedMatches() {
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
         matches.forEach(match ->
@@ -143,116 +142,72 @@ public class MatchService {
     }
 
     /**
-     * 경기 결과 입력
+     * 경기 결과 입력 및 반영
      */
+    @Transactional
     public MatchResultInputResponseDTO inputMatchResult(MatchResultInputRequestDTO requestDTO) {
-        MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
-        responseDTO.setMatchId(requestDTO.getMatchId());
         Match match = matchRepository.findById(requestDTO.getMatchId())
                 .orElseThrow(() -> new RuntimeException("Match not found"));
-        User user = userRepository.findById(requestDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        MatchParticipant participant = matchParticipantRepository.findByMatchAndUser(match, user)
-                .orElseThrow(() -> new RuntimeException("User(participant) not found"));
-
-        UserSubmissionInfoDTO userSubmissionInfoDTO = new UserSubmissionInfoDTO(user.getId(), user.getNickname(), user.getRating(), participant.getTeam());
-
-        // 새로운 제출 정보를 생성하여 저장
-        MatchSubmissionDTO submission = MatchSubmissionDTO.builder()
-                .user(userSubmissionInfoDTO)
-                .matchResult(requestDTO.getMatchResult())
-                .build();
-
-        MatchSubmissionMemoryStore.addSubmission(requestDTO.getMatchId(), submission);
-
-        // 해당 매치의 제출 내역 리턴
-        return getInputResponseDTO(match);
-    }
-
-    /**
-     * 경기 승패 제출 내역 반환
-     */
-    public MatchResultInputResponseDTO getMatchResultStatus(Long matchId) {
-
-        Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RuntimeException("Match not found"));
-
-        return getInputResponseDTO(match);
-    }
-
-    /**
-     * 승패 제출 내역 반환해주는 메소드
-     * (모두 제출하면 승/패에 따라서 점수를 부여하고, 매치테이블에 이긴 팀 기록)
-     */
-    private MatchResultInputResponseDTO getInputResponseDTO(Match match) {
-        Long matchId = match.getMatchId();
-        MatchResultInputResponseDTO matchResultInputResponseDTO = new MatchResultInputResponseDTO();
-        List<MatchSubmissionDTO> submissions = MatchSubmissionMemoryStore.getSubmissions(matchId);
-        matchResultInputResponseDTO.setMatchId(matchId);
-        matchResultInputResponseDTO.setSubmissions(submissions);
-
-        // 승패 전부 제출 여부 체크 (예: ONE_VS_ONE이면 2건, TWO_VS_TWO이면 4건 이상이면 완료)
-        int submissionCount = submissions.size();
-        if ((match.getMatchType() == MatchType.ONE_VS_ONE && submissionCount >= 2) ||
-                (match.getMatchType() == MatchType.TWO_VS_TWO && submissionCount >= 4)) {
-            matchResultInputResponseDTO.setMatchCompleted(true);
-
-            updateUserRatingAndSaveWinnerTeam(match, matchResultInputResponseDTO);
-
-        } else {
-            matchResultInputResponseDTO.setMatchCompleted(false);
+        // 이미 결과 입력 완료된 매치면은 안받음
+        if (match.getStatus() == MatchStatus.COMPLETED){
+            MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
+            responseDTO.setMatchId(requestDTO.getMatchId());
+            responseDTO.setSuccess(false);
+            responseDTO.setMessage("이미 결과가 입력된 매치입니다.");
+            return responseDTO;
         }
 
-        return matchResultInputResponseDTO;
-    }
 
-    /**
-     * 승패에 따른 점수 부여, 승리 팀 기록
-     * TODO 점수부여방식 고정 => 점수차에따라 바꾸기
-     */
-    private void updateUserRatingAndSaveWinnerTeam(Match match, MatchResultInputResponseDTO matchResultInputResponseDTO) {
+        List<MatchParticipant> matchParticipantList = matchParticipantRepository.findByMatch(match);
 
-        int redTeamWinCount = 0, blueTeamWinCount = 0;
-        TeamType winnerTeam;
-        List<MatchSubmissionDTO> submissions = matchResultInputResponseDTO.getSubmissions();
+        List<Integer> redTeamScores = requestDTO.getRedTeamScores();
+        List<Integer> blueTeamScores = requestDTO.getBlueTeamScores();
 
-        for (MatchSubmissionDTO submission : submissions) {
-            TeamType team = submission.getUser().getTeam();
-            MatchResult result = submission.getMatchResult();
+        log.info("{}", redTeamScores);
+        log.info("{}", blueTeamScores);
+        log.info("{}", requestDTO.getWinnerTeam());
 
-            if ((team == TeamType.BLUE && result == MatchResult.WIN) || (team == TeamType.RED && result == MatchResult.LOSE)) {
-                blueTeamWinCount++;
-            } else {
-                redTeamWinCount++;
-            }
-        }
-
-        if (blueTeamWinCount >= redTeamWinCount) {
-            winnerTeam = TeamType.BLUE;
-        } else {
-            winnerTeam = TeamType.RED;
-        }
-
-        // 승리팀 기록
-        match.setWinnerTeam(winnerTeam);
+        // 경기 결과 DB 저장
         match.setStatus(MatchStatus.COMPLETED);
+        match.setWinnerTeam(requestDTO.getWinnerTeam());
         matchRepository.save(match);
 
-        // 개인 점수 기록
-        for (MatchSubmissionDTO submission : submissions) {
-            User user = userRepository.findById(submission.getUser().getUserId())
-                    .orElseThrow(() -> new RuntimeException("user not found"));
 
-            if (submission.getUser().getTeam() == winnerTeam) {
-                user.setRating(user.getRating() + 10);
-            }
-            else {
-                user.setRating(user.getRating() - 10);
-            }
+        // 경기 스코어 DB 저장
+        for (int i = 0; i < redTeamScores.size(); i++) {
 
+            Integer setNumber = i + 1;
+            SetScore setScore = SetScore.builder()
+                    .setNumber(setNumber)
+                    .redTeamScore(redTeamScores.get(i))
+                    .blueTeamScore(blueTeamScores.get(i))
+                    .match(match)
+                    .build();
+
+            setScoreRepository.save(setScore);
+
+        }
+
+        // 유저 레이팅 점수 저장 (TODO: 현재는 고정으로 +10, -10, 배드민턴 점수만 올림)
+        for (MatchParticipant participant : matchParticipantList) {
+            User user = userRepository.findById(participant.getUser().getId()).get();
+            if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                user.setBadmintonRating(user.getBadmintonRating() + 10);
+            } else {
+                user.setBadmintonRating(user.getBadmintonRating() + -10);
+            }
             userRepository.save(user);
         }
+
+
+        // 성공 response DTO
+        MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
+        responseDTO.setMatchId(requestDTO.getMatchId());
+        responseDTO.setSuccess(true);
+        responseDTO.setMessage("경기 결과가 전송되었습니다.");
+
+        return responseDTO;
     }
 
 
