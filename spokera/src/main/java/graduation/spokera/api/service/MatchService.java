@@ -4,23 +4,21 @@ import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.match.SetScore;
 import graduation.spokera.api.domain.type.MatchResult;
-import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.dto.match.*;
 import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.domain.type.TeamType;
 import graduation.spokera.api.domain.user.UserRepository;
-import graduation.spokera.api.dto.user.MatchHistoryProjectionDTO;
-import graduation.spokera.api.dto.user.UserSubmissionInfoDTO;
+import graduation.spokera.api.dto.user.MatchHistoryResponseDTO;
 import graduation.spokera.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -129,10 +127,12 @@ public class MatchService {
     }
 
     /**
-     * 경기 추천 (TODO: 랜덤방식 -> 추천)
+     * 경기 추천
      */
     public List<Match> getRecommendedMatches() {
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+
+        // (TODO: 추천도 랜덤방식 -> 추천)
         matches.forEach(match ->
                 match.setRecommendationScore(ThreadLocalRandom.current().nextInt(0, 11))
         );
@@ -150,7 +150,7 @@ public class MatchService {
                 .orElseThrow(() -> new RuntimeException("Match not found"));
 
         // 이미 결과 입력 완료된 매치면은 안받음
-        if (match.getStatus() == MatchStatus.COMPLETED){
+        if (match.getStatus() == MatchStatus.COMPLETED) {
             MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
             responseDTO.setMatchId(requestDTO.getMatchId());
             responseDTO.setSuccess(false);
@@ -176,17 +176,16 @@ public class MatchService {
 
         // 경기 스코어 DB 저장
         for (int i = 0; i < redTeamScores.size(); i++) {
-
             Integer setNumber = i + 1;
-            SetScore setScore = SetScore.builder()
+
+            SetScore setScoreResponseDTO = SetScore.builder()
                     .setNumber(setNumber)
                     .redTeamScore(redTeamScores.get(i))
                     .blueTeamScore(blueTeamScores.get(i))
                     .match(match)
                     .build();
 
-            setScoreRepository.save(setScore);
-
+            setScoreRepository.save(setScoreResponseDTO);
         }
 
         // 유저 레이팅 점수 저장 (TODO: 현재는 고정으로 +10, -10, 배드민턴 점수만 올림)
@@ -210,8 +209,48 @@ public class MatchService {
         return responseDTO;
     }
 
+    /**
+     * 유저 대전기록 조회
+     */
+    public List<MatchHistoryResponseDTO> getMatchHistory(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음"));
+        List<MatchParticipant> joinedMatches = matchParticipantRepository.findByUser(user);
 
-    public List<MatchHistoryProjectionDTO> getMatchHistory(Long userId) {
-        return matchRepository.getUserMatchHistory(userId);
+        List<MatchHistoryResponseDTO> matchHistoryList = new ArrayList<>();
+
+        for (MatchParticipant joinedMatch : joinedMatches) {
+
+            List<SetScore> setScoreList = setScoreRepository.findByMatch(joinedMatch.getMatch());
+            Match match = joinedMatch.getMatch();
+
+            // 경기결과
+            MatchResult result;
+            if (joinedMatch.getTeam() == match.getWinnerTeam())
+                result = MatchResult.WIN;
+            else
+                result = MatchResult.LOSE;
+
+            // 스코어
+            List<SetScoreResponseDTO> setScoreResponseDTOList = setScoreList.stream()
+                    .map(SetScoreResponseDTO::toDTO)
+                    .toList();
+
+            // 응답 생성
+            MatchHistoryResponseDTO matchHistoryResponseDTO = MatchHistoryResponseDTO.builder()
+                    .matchId(match.getMatchId())
+                    .sportType(match.getSportType())
+                    .setScoreResponseDTOList(setScoreResponseDTOList)
+                    .startTime(match.getStartTime())
+                    .endTime(match.getEndTime())
+                    .teamType(joinedMatch.getTeam())
+                    .result(result)
+                    .build();
+
+            matchHistoryList.add(matchHistoryResponseDTO);
+        }
+
+        return matchHistoryList;
     }
+
 }
