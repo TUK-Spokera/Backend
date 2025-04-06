@@ -18,11 +18,10 @@ import java.util.List;
 public class MatchHistoryResponseDTO {
     private Long matchId;
     private String sportType;
-    private List<SetScoreResponseDTO> setScoreResponseDTOList;
+    private MatchType matchType;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private List<SetScoreResponseDTO> setScores;
     private TeamType teamType;
     private MatchResult result; // WIN or LOSE
-
-
 }

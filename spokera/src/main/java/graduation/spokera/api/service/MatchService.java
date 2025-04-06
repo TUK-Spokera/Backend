@@ -221,6 +221,10 @@ public class MatchService {
 
         for (MatchParticipant joinedMatch : joinedMatches) {
 
+            // Complete 된 매치가 아닌경우 continue
+            if (joinedMatch.getMatch().getStatus() != MatchStatus.COMPLETED)
+               continue;
+
             List<SetScore> setScoreList = setScoreRepository.findByMatch(joinedMatch.getMatch());
             Match match = joinedMatch.getMatch();
 
@@ -240,7 +244,8 @@ public class MatchService {
             MatchHistoryResponseDTO matchHistoryResponseDTO = MatchHistoryResponseDTO.builder()
                     .matchId(match.getMatchId())
                     .sportType(match.getSportType())
-                    .setScoreResponseDTOList(setScoreResponseDTOList)
+                    .matchType(match.getMatchType())
+                    .setScores(setScoreResponseDTOList)
                     .startTime(match.getStartTime())
                     .endTime(match.getEndTime())
                     .teamType(joinedMatch.getTeam())
