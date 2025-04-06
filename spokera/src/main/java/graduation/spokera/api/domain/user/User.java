@@ -27,13 +27,19 @@ public class User {
     private Double latitude;  // 현재 위치 위도
     private Double longitude; // 현재 위치 경도
 
-    private int rating; // 매칭 시 활용할 실력 점수
+//    private Integer rating; // 레이팅 3개로 분리
+
+    private Integer badmintonRating;
+    private Integer pingpongRating;
+    private Integer futsalRating;
 
     private LocalDateTime createdAt; // 가입일
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.rating = 1000;
+        this.badmintonRating = 1000;
+        this.pingpongRating = 1000;
+        this.futsalRating = 1000;
     }
 }
