@@ -198,9 +198,45 @@ public class MatchService {
         List<Integer> redTeamScores = requestDTO.getRedTeamScores();
         List<Integer> blueTeamScores = requestDTO.getBlueTeamScores();
 
-        log.info("{}", redTeamScores);
-        log.info("{}", blueTeamScores);
-        log.info("{}", requestDTO.getWinnerTeam());
+        // 스코어 검증
+        if (redTeamScores == null || blueTeamScores == null || redTeamScores.size() != blueTeamScores.size()) {
+            throw new IllegalArgumentException("세트 점수 리스트가 올바르지 않습니다.");
+        }
+
+        int redSetWins = 0;
+        int blueSetWins = 0;
+
+        for (int i = 0; i < redTeamScores.size(); i++) {
+            int redScore = redTeamScores.get(i);
+            int blueScore = blueTeamScores.get(i);
+
+            // 각 세트의 점수가 동일하면 무효 (무승부가 허용되지 않는 경우)
+            if (redScore == blueScore) {
+                throw new IllegalArgumentException("세트 " + (i + 1) + "의 점수가 무승부입니다.");
+            }
+
+            if (redScore > blueScore) {
+                redSetWins++;
+            } else {
+                blueSetWins++;
+            }
+        }
+
+        // 예를 들어, 세트 승수가 더 많은 팀을 승리 팀으로 결정
+        TeamType calculatedWinnerTeam;
+        if (redSetWins > blueSetWins) {
+            calculatedWinnerTeam = TeamType.RED;
+        } else if (blueSetWins > redSetWins) {
+            calculatedWinnerTeam = TeamType.BLUE;
+        } else {
+            throw new IllegalArgumentException("세트 승수가 동일하여 승리 팀을 결정할 수 없습니다.");
+        }
+
+        // 선언된 승리 팀과 계산된 승리 팀이 일치하는지 검증
+        if (!calculatedWinnerTeam.equals(requestDTO.getWinnerTeam())) {
+            throw new IllegalArgumentException("세트 점수와 선언된 승리 팀이 일치하지 않습니다.");
+        }
+
 
         // 경기 결과 DB 저장
         match.setStatus(MatchStatus.COMPLETED);
