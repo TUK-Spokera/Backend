@@ -1,6 +1,5 @@
 package graduation.spokera.api.dto.user;
 
-import graduation.spokera.api.domain.match.SetScore;
 import graduation.spokera.api.domain.type.MatchResult;
 import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.type.TeamType;

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class MatchJoinRequestDTO {
-    public Long matchId;
-    public Long userId;
+    private Long matchId;
+    private Long userId;
 }
