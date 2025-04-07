@@ -21,7 +21,7 @@ public class FacilityService {
     private final FacilityRepository facilityRepo;
     private static final String NAVER_MAP_SEARCH_BASE_URL = "https://map.naver.com/p/search/";
 
-    public List<FacilityRecommendResponseDTO> recommendFacilities(List<User> users, String ftypeNm, int maxResults) {
+    public List<FacilityRecommendResponseDTO> recommendFacilities(List<User> users, String sportType, int maxResults) {
 
 //        if (locations.size() < 2) {
 //            throw new IllegalArgumentException("최소 2명의 위치 정보가 필요합니다.");
@@ -38,7 +38,8 @@ public class FacilityService {
         double midLng = avgLng.getAsDouble();
 
         // 특정 `FtypeNm`을 포함하는 시설 조회 (예: 배드민턴, 축구 등)
-        List<Facility> allFacilities = facilityRepo.findByFtypeNmContaining(ftypeNm);
+
+        List<Facility> allFacilities = facilityRepo.findByFtypeNmContaining(sportType);
 
         // 거리 계산 후 가까운 경기장 추천 (maxResults 개수 제한)
         return allFacilities.stream()

@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MatchCreateResponseDTO {
-    private Long createdMatchId;
-    private boolean success;
-    private String message;
+public class MatchJoinResponseDTO {
+   private boolean success;
+   private String message;
 }

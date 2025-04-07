@@ -4,6 +4,7 @@ import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.match.SetScore;
 import graduation.spokera.api.domain.type.MatchResult;
+import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.dto.match.*;
@@ -40,14 +41,39 @@ public class MatchService {
 
     /**
      * 매치 조인
+     * TODO : 2:2 이상일시 팀 배분
      */
     @Transactional
-    public Boolean joinMatch(User user, Long matchId) {
+    public MatchJoinResponseDTO joinMatch(Long userId, Long matchId) {
 
-        // 매칭 완료로 상태 바꿈
-        Match match = matchRepository.findById(matchId).get();
-        match.setStatus(MatchStatus.MATCHED);
-        matchRepository.save(match);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음"));
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new RuntimeException("매치를 찾을 수 없음"));
+
+        List<MatchParticipant> matchParticipantList = matchParticipantRepository.findByMatch(match);
+
+        // 이미 참가한 상태면은 돌려보냄
+        boolean alreadyJoiend = matchParticipantList
+                .stream()
+                .anyMatch(mp -> mp.getUser().getId().equals(user.getId()));
+
+        if (alreadyJoiend){
+            return MatchJoinResponseDTO.builder()
+                    .success(false)
+                    .message("이미 참가 한 유저입니다.")
+                    .build();
+        }
+
+        // 풀방이면 못들어감
+        if (matchParticipantList.size() >= match.getMatchType().getMaxParticipants())
+        {
+            return MatchJoinResponseDTO.builder()
+                    .success(false)
+                    .message("정원이 가득 찼습니다.")
+                    .build();
+        }
+
 
         // 매치에 유저 들어감
         MatchParticipant matchParticipant = MatchParticipant.builder()
@@ -58,7 +84,14 @@ public class MatchService {
                 .build();
         matchParticipantRepository.save(matchParticipant);
 
-        return true;
+        // 매칭 완료로 상태 바꿈
+        match.setStatus(MatchStatus.MATCHED);
+        matchRepository.save(match);
+
+        return MatchJoinResponseDTO.builder()
+                .success(true)
+                .message("참가가 되었습니다.")
+                .build();
 
     }
 
@@ -76,10 +109,11 @@ public class MatchService {
         MatchParticipant matchParticipant = setMatchParticipant(user, match, TeamType.RED);
         matchParticipantRepository.save(matchParticipant);
 
-        MatchCreateResponseDTO matchCreateResponseDTO = new MatchCreateResponseDTO();
-        matchCreateResponseDTO.setMatchId(match.getMatchId());
-
-        return matchCreateResponseDTO;
+        return MatchCreateResponseDTO.builder()
+                .createdMatchId(match.getMatchId())
+                .success(true)
+                .message("매치가 생성되었습니다.")
+                .build();
     }
 
     /**

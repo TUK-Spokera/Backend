@@ -54,11 +54,12 @@ public class MatchController {
     }
 
     @PostMapping("/join")
-    public ResponseEntity<Boolean> joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO){
-        Optional<User> userOpt = userRepository.findById(matchJoinRequestDTO.getUserId());
+    public MatchJoinResponseDTO joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO){
 
-        Boolean joinResult = matchService.joinMatch(userOpt.get(), matchJoinRequestDTO.getMatchId());
-        return ResponseEntity.ok(joinResult);
+        Long userId = matchJoinRequestDTO.getUserId();
+        Long matchId = matchJoinRequestDTO.getMatchId();
+
+        return matchService.joinMatch(userId, matchId);
     }
 
 

@@ -1,9 +1,6 @@
 package graduation.spokera.api.domain.match;
 
-import graduation.spokera.api.domain.type.MatchResult;
-import graduation.spokera.api.domain.type.MatchStatus;
-import graduation.spokera.api.domain.type.MatchType;
-import graduation.spokera.api.domain.type.TeamType;
+import graduation.spokera.api.domain.type.*;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +22,7 @@ public class Match {
     private Long matchId;
 
     private String sportType;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
