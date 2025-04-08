@@ -1,5 +1,6 @@
 package graduation.spokera.api.controller;
 
+import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.user.TokenResponse;
 import graduation.spokera.api.dto.user.UserInfoResponse;
 import  graduation.spokera.api.service.AuthService;
@@ -44,10 +45,11 @@ public class AuthController {
 
     @GetMapping("/user/me")
     public ResponseEntity<UserInfoResponse> getCurrentUser() {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName(); // userId 그대로 들어있음
-        UserInfoResponse userInfo = authService.getUserInfoById(Long.parseLong(userId));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserInfoResponse userInfo = authService.getUserInfoById(user.getId());
         return ResponseEntity.ok(userInfo);
     }
+
 
 
 }
