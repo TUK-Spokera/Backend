@@ -14,17 +14,15 @@ import graduation.spokera.api.dto.user.MatchHistoryResponseDTO;
 import graduation.spokera.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -162,6 +160,7 @@ public class MatchService {
      * 매치 내 이미 참여한 유저들과의 위치 차이를 계산합니다.
      */
     public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
+
         // 1. 모든 대기 중인 매치 조회
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
 
