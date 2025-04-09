@@ -67,7 +67,7 @@ public class MatchController {
     /**
      * 대전기록 불러오기
      */
-    @GetMapping("/history")
+    @GetMapping({"/history", "/history/{userId}"})
     public List<MatchHistoryResponseDTO> matchHistory(@AuthenticationPrincipal User user) {
         List<MatchHistoryResponseDTO> userMatchHistory = matchService.getMatchHistory(user.getId());
         return userMatchHistory;

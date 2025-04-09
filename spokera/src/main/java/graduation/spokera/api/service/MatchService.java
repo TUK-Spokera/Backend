@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
@@ -153,76 +154,34 @@ public class MatchService {
         return facilityService.recommendFacilities(users, match.getSportType(), 5);
     }
 
+    /**
+     * 매치추천 부분
+     */
 
     /**
-     * 매치 추천 - 클라이언트가 보낸 DTO 기반
-     * 요청자의 User 엔티티 속 위치(latitude, longitude)를 활용해서,
-     * 매치 내 이미 참여한 유저들과의 위치 차이를 계산합니다.
+     * 두 좌표(lat1, lon1)와 (lat2, lon2) 사이의 거리(km)를 Haversine 공식을 사용하여 계산
      */
-    public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
+    private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS = 6371; // 지구 반지름 (단위: km)
 
-        // 1. 모든 대기 중인 매치 조회
-        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+        double dLat = Math.toRadians(lat2 - lat1); // 위도 차
+        double dLon = Math.toRadians(lon2 - lon1); // 경도 차
 
-        if (matches.isEmpty()) return List.of();
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
-        // 2. 매치 ID 리스트로 모든 참가자 한번에 조회
-        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        // 3. 매치 ID별로 참가자 맵 구성
-        Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
-                .collect(Collectors.groupingBy(mp -> mp.getMatch().getMatchId()));
-
-        // 4. 요청자가 참가하지 않은 매치만 필터링
-        matches = matches.stream()
-                .filter(match -> {
-                    List<MatchParticipant> participants = matchParticipantsMap.get(match.getMatchId());
-                    if (participants == null) return true;
-                    return participants.stream()
-                            .noneMatch(mp -> mp.getUser().getId().equals(requestingUser.getId()));
-                })
-                .collect(Collectors.toList());
-
-
-        // 클라이언트 요청 정보
-        String desiredSport = requestDTO.getSportType();
-        LocalDateTime desiredTime = requestDTO.getStartTime();
-        // 요청자의 위치 정보
-        double userLat = requestingUser.getLatitude();
-        double userLon = requestingUser.getLongitude();
-
-        // 각 매치별 점수 계산
-        for (Match match : matches) {
-            // 1. 위치 점수: 요청자와 매치에 참여한 유저들의 평균 거리를 기준으로 점수 산출
-            double locationScore = calculateLocationScoreForMatch(userLat, userLon, match);
-            // 2. 시간 점수: 원하는 시작 시간과 매치 시작 시간의 차이를 기반으로 산출
-            double timeScore = calculateTimeScore(desiredTime, match.getStartTime());
-            // 3. 종목 점수: 요청한 종목과 매치의 종목 비교
-            double sportScore = calculateSportScore(desiredSport, match.getSportType());
-            // 4. 평점 점수: 매치 참여 유저들의 종목 rating 평균을 정규화한 값
-            double ratingScore = calculateRatingScore(match);
-
-            // 가중치 적용 (예: 위치 40%, 시간 30%, 종목 20%, 평점 10%)
-            double totalScore = locationScore * 0.4 + timeScore * 0.3 + sportScore * 0.2 + ratingScore * 0.1;
-            match.setRecommendationScore((int) totalScore);
-        }
-
-        // 추천 점수가 높은 순으로 정렬 후 상위 10개 매치 반환
-        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
-        return matches.subList(0, Math.min(matches.size(), 10));
+        return EARTH_RADIUS * c;
     }
 
-    /**
-     * 위치 점수: 요청자의 위치와 매치에 참여한 유저들의 위치의 평균 거리를 이용.
-     * - 평균 거리가 5km 이하면 최대 점수 10
-     * - 평균 거리가 20km 이상이면 0
-     * - 그 사이에서는 선형 보간
-     */
+    // 1. 위치 점수
     private double calculateLocationScoreForMatch(double userLat, double userLon, Match match) {
         List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
         if (participants == null || participants.isEmpty()) {
-            // 참여자가 없으면 기본적으로 최대 점수를 부여 (또는 상황에 맞게 조정)
-            return 10;
+            // 참여자가 없으면 기본적으로 최대 점수를 부여
+            return 100;
         }
         double totalDistance = 0;
         int count = 0;
@@ -235,54 +194,44 @@ public class MatchService {
             count++;
         }
         double averageDistance = totalDistance / count;
-        if (averageDistance <= 5) return 10;
+        if (averageDistance <= 5) return 100;
         if (averageDistance >= 20) return 0;
-        return 10 * (20 - averageDistance) / 15.0;
+        return 100 * (20 - averageDistance) / 15.0;
     }
 
-    /**
-     * 두 좌표간 거리를 계산 (Haversine 공식)
-     */
-    private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int EARTH_RADIUS = 6371; // km
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS * c;
-    }
 
-    /**
-     * 시간 점수: 원하는 시작 시간과 매치 시작 시간의 차이에 따라 선형 보간하여 계산
-     * - 30분 이내면 10점, 2시간 이상이면 0점
-     */
     private double calculateTimeScore(LocalDateTime desiredTime, LocalDateTime matchTime) {
-        long diffMinutes = Math.abs(Duration.between(desiredTime, matchTime).toMinutes());
-        if (diffMinutes <= 30) return 10;
-        if (diffMinutes >= 120) return 0;
-        return 10.0 * (120 - diffMinutes) / 90.0;
+        // 1. 남은 시간(분) 계산
+        long remainingMinutes = Duration.between(desiredTime, matchTime).toMinutes();
+        if (remainingMinutes < 0) {
+            remainingMinutes = 0;
+        }
+
+        // 2. 최대 인정 범위 = 100일 = 144,000분
+        long maxMinutes = 100L * 24 * 60; // 100일
+
+        // 3. 점수 계산: 가까울수록 높게, 멀수록 낮게
+        if (remainingMinutes >= maxMinutes) {
+            return 0;
+        }
+
+        double score = 100.0 * (maxMinutes - remainingMinutes) / maxMinutes;
+        return score;
     }
 
-    /**
-     * 종목 점수: 요청한 종목과 매치의 종목이 일치하면 10점, 아니면 0
-     */
+    // 3. 종목 점수
     private double calculateSportScore(String desiredSport, String matchSport) {
         if (desiredSport.equalsIgnoreCase(matchSport)) {
-            return 10;
+            return 100;
         }
         return 0;
     }
 
-    /**
-     * 평점 점수: 매치에 참여한 유저들의 종목별 rating 평균을 이용하여 정규화
-     * 예시에서는 rating 범위를 800 ~ 1200으로 가정하여 0 ~ 10 사이 값으로 변환
-     */
+    // 4. 평점 점수
     private double calculateRatingScore(Match match) {
         List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
         if (participants == null || participants.isEmpty()) {
-            return 10;
+            return 100;
         }
         double sum = 0;
         int count = 0;
@@ -306,10 +255,48 @@ public class MatchService {
             count++;
         }
         double avgRating = sum / count;
-        double normalizedScore = (avgRating - 800) * 10.0 / 400;
+        double normalizedScore = (avgRating - 800) * 100.0 / 400;
         if (normalizedScore < 0) normalizedScore = 0;
-        if (normalizedScore > 10) normalizedScore = 10;
+        if (normalizedScore > 100) normalizedScore = 100;
         return normalizedScore;
+    }
+
+    // 기존 추천 매치 계산 메서드에서는 가중치는 그대로 40%, 30%, 20%, 10%를 적용
+    public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
+
+        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+        if (matches.isEmpty()) return List.of();
+
+        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
+        Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
+                .collect(Collectors.groupingBy(mp -> mp.getMatch().getMatchId()));
+        matches = matches.stream()
+                .filter(match -> {
+                    List<MatchParticipant> participants = matchParticipantsMap.get(match.getMatchId());
+                    if (participants == null) return true;
+                    return participants.stream()
+                            .noneMatch(mp -> mp.getUser().getId().equals(requestingUser.getId()));
+                })
+                .collect(Collectors.toList());
+
+        String desiredSport = requestDTO.getSportType();
+        LocalDateTime desiredTime = requestDTO.getStartTime();
+        double userLat = requestingUser.getLatitude();
+        double userLon = requestingUser.getLongitude();
+
+        for (Match match : matches) {
+            double locationScore = calculateLocationScoreForMatch(userLat, userLon, match);
+            double timeScore = calculateTimeScore(desiredTime, match.getStartTime());
+            double sportScore = calculateSportScore(desiredSport, match.getSportType());
+            double ratingScore = calculateRatingScore(match);
+
+            // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 평점 10%
+            double totalScore = locationScore * 0.2 + timeScore * 0.5 + sportScore * 0.2 + ratingScore * 0.1;
+            match.setRecommendationScore((int) totalScore);
+        }
+
+        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
+        return matches.subList(0, Math.min(matches.size(), 10));
     }
 
     /**
