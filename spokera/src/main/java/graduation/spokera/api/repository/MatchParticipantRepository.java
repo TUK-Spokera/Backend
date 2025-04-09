@@ -6,6 +6,7 @@ import graduation.spokera.api.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,6 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     int countByMatch(Match match);
     boolean existsByMatchAndUserId(Match match, Long userId);
     Optional<MatchParticipant> findByMatchAndUser(Match match, User user);
+
+    List<MatchParticipant> findByMatchIn(Collection<Match> matches);
 }

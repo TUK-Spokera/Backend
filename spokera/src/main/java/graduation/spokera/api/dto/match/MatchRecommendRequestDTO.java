@@ -6,7 +6,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class MatchRequestDTO {
+public class MatchRecommendRequestDTO {
     private Long userId;
     private String sportType;
     private LocalDateTime startTime;

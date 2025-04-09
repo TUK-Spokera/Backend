@@ -27,29 +27,31 @@ public class MatchController {
     }
 
     @PostMapping("/recommend")
-    public ResponseEntity<List<Match>> requestMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findById(matchRequestDto.getUserId());
-        log.info("{}", matchRequestDto);
+    public ResponseEntity<List<Match>> requestMatch(@RequestBody MatchRecommendRequestDTO matchRecommendRequestDto) {
+        Optional<User> userOpt = userRepository.findById(matchRecommendRequestDto.getUserId());
+        log.info("{}", matchRecommendRequestDto);
         if (userOpt.isEmpty()) {
-            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRequestDto.getUserId());
+            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRecommendRequestDto.getUserId());
             return ResponseEntity.badRequest().build();
         }
 
-        List<Match> matches = matchService.getRecommendedMatches();
+        User requestingUser = userOpt.get();
+        // 요청자의 User 엔티티에 저장된 위치 정보를 활용하여 추천 진행
+        List<Match> matches = matchService.getRecommendedMatches(matchRecommendRequestDto, requestingUser);
         return ResponseEntity.ok(matches);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRequestDTO matchRequestDto) {
-        Optional<User> userOpt = userRepository.findById(matchRequestDto.getUserId());
+    public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRecommendRequestDTO matchRecommendRequestDto) {
+        Optional<User> userOpt = userRepository.findById(matchRecommendRequestDto.getUserId());
 
         if (userOpt.isEmpty()) {
-            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRequestDto.getUserId());
+            log.info("userid={} 사용자를 찾을 수 없습니다.", matchRecommendRequestDto.getUserId());
             return ResponseEntity.badRequest().build();
         }
 
 
-        MatchCreateResponseDTO matchCreateResponseDTO = matchService.createMatch(matchRequestDto, userOpt.get());
+        MatchCreateResponseDTO matchCreateResponseDTO = matchService.createMatch(matchRecommendRequestDto, userOpt.get());
         return ResponseEntity.ok(matchCreateResponseDTO);
     }
 

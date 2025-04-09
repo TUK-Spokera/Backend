@@ -4,7 +4,6 @@ import graduation.spokera.api.domain.match.Match;
 import graduation.spokera.api.domain.match.MatchParticipant;
 import graduation.spokera.api.domain.match.SetScore;
 import graduation.spokera.api.domain.type.MatchResult;
-import graduation.spokera.api.domain.type.MatchType;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.dto.match.*;
@@ -18,13 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.concurrent.ThreadLocalRandom;
 
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,7 +58,7 @@ public class MatchService {
                 .stream()
                 .anyMatch(mp -> mp.getUser().getId().equals(user.getId()));
 
-        if (alreadyJoiend){
+        if (alreadyJoiend) {
             return MatchJoinResponseDTO.builder()
                     .success(false)
                     .message("이미 참가 한 유저입니다.")
@@ -66,8 +66,7 @@ public class MatchService {
         }
 
         // 풀방이면 못들어감
-        if (matchParticipantList.size() >= match.getMatchType().getMaxParticipants())
-        {
+        if (matchParticipantList.size() >= match.getMatchType().getMaxParticipants()) {
             return MatchJoinResponseDTO.builder()
                     .success(false)
                     .message("정원이 가득 찼습니다.")
@@ -99,14 +98,29 @@ public class MatchService {
      * 매치 생성
      */
     @Transactional
-    public MatchCreateResponseDTO createMatch(MatchRequestDTO matchRequestDto, User user) {
-        Match match = setMatch(matchRequestDto, user);
+    public MatchCreateResponseDTO createMatch(MatchRecommendRequestDTO matchRecommendRequestDto, User user) {
+
+        Match match = Match.builder()
+                .sportType(matchRecommendRequestDto.getSportType())
+                .startTime(matchRecommendRequestDto.getStartTime())
+                .endTime(matchRecommendRequestDto.getEndTime())
+                .matchType(matchRecommendRequestDto.getMatchType())
+                .status(MatchStatus.WAITING)
+                .build();
+
         matchRepository.save(match);
 
         log.info("새로운 매치 생성 : {}", match);
 
         // 경기멤버 저장
-        MatchParticipant matchParticipant = setMatchParticipant(user, match, TeamType.RED);
+        MatchParticipant matchParticipant = MatchParticipant.builder()
+                .user(user)
+                .team(TeamType.RED)
+                .match(match)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+
         matchParticipantRepository.save(matchParticipant);
 
         return MatchCreateResponseDTO.builder()
@@ -141,38 +155,162 @@ public class MatchService {
         return facilityService.recommendFacilities(users, match.getSportType(), 5);
     }
 
-    private static MatchParticipant setMatchParticipant(User user, Match match, TeamType teamType) {
-        MatchParticipant matchParticipant = new MatchParticipant();
-        matchParticipant.setUser(user);
-        matchParticipant.setTeam(teamType);
-        matchParticipant.setMatch(match);
-        matchParticipant.setJoinedAt(LocalDateTime.now());
-        return matchParticipant;
-    }
 
-    private static Match setMatch(MatchRequestDTO matchRequestDto, User user) {
-        Match match = new Match();
-        match.setSportType(matchRequestDto.getSportType());
-        match.setStartTime(matchRequestDto.getStartTime());
-        match.setEndTime(matchRequestDto.getEndTime());
-        match.setMatchType(matchRequestDto.getMatchType());
-        match.setStatus(MatchStatus.WAITING);
-        return match;
+    /**
+     * 매치 추천 - 클라이언트가 보낸 DTO 기반
+     * 요청자의 User 엔티티 속 위치(latitude, longitude)를 활용해서,
+     * 매치 내 이미 참여한 유저들과의 위치 차이를 계산합니다.
+     */
+    public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
+        // 1. 모든 대기 중인 매치 조회
+        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+
+        if (matches.isEmpty()) return List.of();
+
+        // 2. 매치 ID 리스트로 모든 참가자 한번에 조회
+        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
+
+        // 3. 매치 ID별로 참가자 맵 구성
+        Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
+                .collect(Collectors.groupingBy(mp -> mp.getMatch().getMatchId()));
+
+        // 4. 요청자가 참가하지 않은 매치만 필터링
+        matches = matches.stream()
+                .filter(match -> {
+                    List<MatchParticipant> participants = matchParticipantsMap.get(match.getMatchId());
+                    if (participants == null) return true;
+                    return participants.stream()
+                            .noneMatch(mp -> mp.getUser().getId().equals(requestingUser.getId()));
+                })
+                .collect(Collectors.toList());
+
+
+        // 클라이언트 요청 정보
+        String desiredSport = requestDTO.getSportType();
+        LocalDateTime desiredTime = requestDTO.getStartTime();
+        // 요청자의 위치 정보
+        double userLat = requestingUser.getLatitude();
+        double userLon = requestingUser.getLongitude();
+
+        // 각 매치별 점수 계산
+        for (Match match : matches) {
+            // 1. 위치 점수: 요청자와 매치에 참여한 유저들의 평균 거리를 기준으로 점수 산출
+            double locationScore = calculateLocationScoreForMatch(userLat, userLon, match);
+            // 2. 시간 점수: 원하는 시작 시간과 매치 시작 시간의 차이를 기반으로 산출
+            double timeScore = calculateTimeScore(desiredTime, match.getStartTime());
+            // 3. 종목 점수: 요청한 종목과 매치의 종목 비교
+            double sportScore = calculateSportScore(desiredSport, match.getSportType());
+            // 4. 평점 점수: 매치 참여 유저들의 종목 rating 평균을 정규화한 값
+            double ratingScore = calculateRatingScore(match);
+
+            // 가중치 적용 (예: 위치 40%, 시간 30%, 종목 20%, 평점 10%)
+            double totalScore = locationScore * 0.4 + timeScore * 0.3 + sportScore * 0.2 + ratingScore * 0.1;
+            match.setRecommendationScore((int) totalScore);
+        }
+
+        // 추천 점수가 높은 순으로 정렬 후 상위 10개 매치 반환
+        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
+        return matches.subList(0, Math.min(matches.size(), 10));
     }
 
     /**
-     * 경기 추천
+     * 위치 점수: 요청자의 위치와 매치에 참여한 유저들의 위치의 평균 거리를 이용.
+     * - 평균 거리가 5km 이하면 최대 점수 10
+     * - 평균 거리가 20km 이상이면 0
+     * - 그 사이에서는 선형 보간
      */
-    public List<Match> getRecommendedMatches() {
-        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+    private double calculateLocationScoreForMatch(double userLat, double userLon, Match match) {
+        List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
+        if (participants == null || participants.isEmpty()) {
+            // 참여자가 없으면 기본적으로 최대 점수를 부여 (또는 상황에 맞게 조정)
+            return 10;
+        }
+        double totalDistance = 0;
+        int count = 0;
+        for (MatchParticipant participant : participants) {
+            User participantUser = participant.getUser();
+            double pLat = participantUser.getLatitude();
+            double pLon = participantUser.getLongitude();
+            double distance = haversineDistance(userLat, userLon, pLat, pLon);
+            totalDistance += distance;
+            count++;
+        }
+        double averageDistance = totalDistance / count;
+        if (averageDistance <= 5) return 10;
+        if (averageDistance >= 20) return 0;
+        return 10 * (20 - averageDistance) / 15.0;
+    }
 
-        // (TODO: 추천도 랜덤방식 -> 추천)
-        matches.forEach(match ->
-                match.setRecommendationScore(ThreadLocalRandom.current().nextInt(0, 11))
-        );
+    /**
+     * 두 좌표간 거리를 계산 (Haversine 공식)
+     */
+    private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS = 6371; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS * c;
+    }
 
-        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
-        return matches;
+    /**
+     * 시간 점수: 원하는 시작 시간과 매치 시작 시간의 차이에 따라 선형 보간하여 계산
+     * - 30분 이내면 10점, 2시간 이상이면 0점
+     */
+    private double calculateTimeScore(LocalDateTime desiredTime, LocalDateTime matchTime) {
+        long diffMinutes = Math.abs(Duration.between(desiredTime, matchTime).toMinutes());
+        if (diffMinutes <= 30) return 10;
+        if (diffMinutes >= 120) return 0;
+        return 10.0 * (120 - diffMinutes) / 90.0;
+    }
+
+    /**
+     * 종목 점수: 요청한 종목과 매치의 종목이 일치하면 10점, 아니면 0
+     */
+    private double calculateSportScore(String desiredSport, String matchSport) {
+        if (desiredSport.equalsIgnoreCase(matchSport)) {
+            return 10;
+        }
+        return 0;
+    }
+
+    /**
+     * 평점 점수: 매치에 참여한 유저들의 종목별 rating 평균을 이용하여 정규화
+     * 예시에서는 rating 범위를 800 ~ 1200으로 가정하여 0 ~ 10 사이 값으로 변환
+     */
+    private double calculateRatingScore(Match match) {
+        List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
+        if (participants == null || participants.isEmpty()) {
+            return 10;
+        }
+        double sum = 0;
+        int count = 0;
+        for (MatchParticipant participant : participants) {
+            User user = participant.getUser();
+            double userSportRating;
+            switch (match.getSportType().toLowerCase()) {
+                case "badminton":
+                    userSportRating = user.getBadmintonRating();
+                    break;
+                case "pingpong":
+                    userSportRating = user.getPingpongRating();
+                    break;
+                case "futsal":
+                    userSportRating = user.getFutsalRating();
+                    break;
+                default:
+                    userSportRating = 1000;
+            }
+            sum += userSportRating;
+            count++;
+        }
+        double avgRating = sum / count;
+        double normalizedScore = (avgRating - 800) * 10.0 / 400;
+        if (normalizedScore < 0) normalizedScore = 0;
+        if (normalizedScore > 10) normalizedScore = 10;
+        return normalizedScore;
     }
 
     /**
@@ -244,7 +382,7 @@ public class MatchService {
         matchRepository.save(match);
 
 
-        // 경기 스코어 DB 저장
+        // 경기 스코어 DB 저장 (기존 코드 유지)
         for (int i = 0; i < redTeamScores.size(); i++) {
             Integer setNumber = i + 1;
 
@@ -258,17 +396,52 @@ public class MatchService {
             setScoreRepository.save(setScoreResponseDTO);
         }
 
-        // 유저 레이팅 점수 저장 (TODO: 현재는 고정으로 +10, -10, 배드민턴 점수만 올림)
+        // 1. 세트 점수 차이 계산 : 각 세트의 점수 차이의 절대값 합산
+        int totalScoreDiff = 0;
+        for (int i = 0; i < redTeamScores.size(); i++) {
+            totalScoreDiff += Math.abs(redTeamScores.get(i) - blueTeamScores.get(i));
+        }
+
+        // 2. 팀별 평균 레이팅 계산 : 해당 종목의 레이팅을 사용 (예시에서는 배드민턴)
+        List<MatchParticipant> winners = matchParticipantList.stream()
+                .filter(mp -> mp.getTeam() == requestDTO.getWinnerTeam())
+                .toList();
+        List<MatchParticipant> losers = matchParticipantList.stream()
+                .filter(mp -> mp.getTeam() != requestDTO.getWinnerTeam())
+                .toList();
+
+        double winnerAvgRating = winners.stream()
+                .mapToInt(mp -> getSportRating(mp.getUser(), match.getSportType()))
+                .average().orElse(1000);
+        double loserAvgRating = losers.stream()
+                .mapToInt(mp -> getSportRating(mp.getUser(), match.getSportType()))
+                .average().orElse(1000);
+
+        // 3. 평점 차이에 따른 multiplier 계산
+        double ratingDiff = loserAvgRating - winnerAvgRating; // 승리팀이 언더독이면 양수
+        double ratingMultiplier = 1 + (ratingDiff / 400.0);
+        // 필요에 따라 multiplier의 범위를 제한 (예: 0.5 ~ 2.0)
+        if (ratingMultiplier < 0.5) ratingMultiplier = 0.5;
+        if (ratingMultiplier > 2.0) ratingMultiplier = 2.0;
+
+        // 4. 최종 레이팅 변경치 계산 : 기본치 10 + 세트 차이 반영, 여기에 ratingMultiplier 적용
+        double adjustmentFactor = 1.0;  // 세트 점수 차이에 적용할 추가 가중치 (테스트를 통해 튜닝)
+        int baseDelta = (int) Math.round(10 + adjustmentFactor * totalScoreDiff);
+        int ratingDelta = (int) Math.round(baseDelta * ratingMultiplier);
+
+        // 승리 팀과 패배 팀에 적용 (예시에서는 배드민턴 레이팅 업데이트)
         for (MatchParticipant participant : matchParticipantList) {
-            User user = userRepository.findById(participant.getUser().getId()).get();
+            User user = userRepository.findById(participant.getUser().getId())
+                    .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음"));
             if (requestDTO.getWinnerTeam() == participant.getTeam()) {
-                user.setBadmintonRating(user.getBadmintonRating() + 10);
+                // 승리 팀이면 ratingDelta 만큼 상승
+                user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
             } else {
-                user.setBadmintonRating(user.getBadmintonRating() + -10);
+                // 패배 팀이면 ratingDelta 만큼 하락
+                user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
             }
             userRepository.save(user);
         }
-
 
         // 성공 response DTO
         MatchResultInputResponseDTO responseDTO = new MatchResultInputResponseDTO();
@@ -277,6 +450,20 @@ public class MatchService {
         responseDTO.setMessage("경기 결과가 전송되었습니다.");
 
         return responseDTO;
+    }
+
+    private int getSportRating(User user, String sportType) {
+        switch (sportType.toLowerCase()) {
+            case "badminton":
+                return user.getBadmintonRating();
+            case "pingpong":
+                return user.getPingpongRating();
+            case "futsal":
+                return user.getFutsalRating();
+            default:
+                // 알 수 없는 종목이면 기본값 사용 (예: 1000점)
+                return 1000;
+        }
     }
 
     /**
@@ -293,7 +480,7 @@ public class MatchService {
 
             // Complete 된 매치가 아닌경우 continue
             if (joinedMatch.getMatch().getStatus() != MatchStatus.COMPLETED)
-               continue;
+                continue;
 
             List<SetScore> setScoreList = setScoreRepository.findByMatch(joinedMatch.getMatch());
             Match match = joinedMatch.getMatch();

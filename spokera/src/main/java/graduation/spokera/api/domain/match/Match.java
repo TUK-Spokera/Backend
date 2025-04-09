@@ -1,11 +1,9 @@
 package graduation.spokera.api.domain.match;
 
 import graduation.spokera.api.domain.type.*;
+import graduation.spokera.api.domain.user.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +13,8 @@ import java.time.LocalDateTime;
 @Table(name = "matches")
 @ToString
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Match {
 
     @Id
@@ -41,5 +41,4 @@ public class Match {
 
     @Enumerated(EnumType.STRING)
     private TeamType winnerTeam;
-
 }
