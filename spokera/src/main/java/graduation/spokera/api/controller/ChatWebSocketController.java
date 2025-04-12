@@ -11,9 +11,9 @@ import graduation.spokera.api.repository.MatchRepository;
 import graduation.spokera.api.service.FacilityVoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +32,9 @@ public class ChatWebSocketController {
     private final MatchRepository matchRepository;
     private final FacilityVoteService facilityVoteService;
 
+    /**
+     * ✅ 채팅 메시지 전송
+     */
     @MessageMapping("/chat.sendMessage")
     @Transactional
     public void sendMessage(@Payload ChatMessageDTO chatMessageDTO, Principal principal) {
@@ -55,6 +58,9 @@ public class ChatWebSocketController {
                 new ChatMessageDTO(match.getMatchId(), user.getNickname(), chatMessage.getContent()));
     }
 
+    /**
+     * ✅ 경기장 투표 전송
+     */
     @MessageMapping("/chat.sendVote")
     public void sendVote(VoteMessageDTO voteMessage, Principal principal) {
         User user = (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
@@ -76,6 +82,4 @@ public class ChatWebSocketController {
 
         messagingTemplate.convertAndSend("/topic/room/" + matchId, result);
     }
-
-
 }

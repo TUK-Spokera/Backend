@@ -1,5 +1,6 @@
 package graduation.spokera.api.util;
 
+import graduation.spokera.api.repository.MatchRepository;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.domain.user.UserRepository;
 import org.springframework.messaging.Message;
@@ -18,12 +19,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final MatchRepository matchRepository;
 
-    public StompAuthChannelInterceptor(JwtUtil jwtUtil, UserRepository userRepository) {
+    public StompAuthChannelInterceptor(JwtUtil jwtUtil, UserRepository userRepository, MatchRepository matchRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.matchRepository = matchRepository;
     }
-
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -31,7 +33,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             String token = accessor.getFirstNativeHeader("Authorization");
-            String matchId = accessor.getFirstNativeHeader("matchId"); // ⬅ matchId
+            String matchId = accessor.getFirstNativeHeader("matchId");
 
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
@@ -39,18 +41,22 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 if (jwtUtil.validateToken(token)) {
                     String userId = jwtUtil.getUserIdFromToken(token);
 
-                    // 🔍 DB에서 유저 정보 조회
                     User user = userRepository.findById(Long.parseLong(userId))
                             .orElseThrow(() -> new RuntimeException("User not found"));
 
-                    // ✅ Principal로 User 전체 넣기
-                    accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, List.of()));
+                    // 🔒 matchId 유효성 체크
+                    if (matchId != null && !matchId.isBlank()) {
+                        boolean exists = matchRepository.existsById(Long.parseLong(matchId));
+                        if (!exists) {
+                            throw new IllegalArgumentException("❌ 존재하지 않는 matchId: " + matchId);
+                        }
 
-                    // ✅ matchId 세션에 저장
-                    if (matchId != null) {
                         accessor.getSessionAttributes().put("matchId", matchId);
                         System.out.println("📌 matchId 세션에 저장: " + matchId);
                     }
+
+                    accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, List.of()));
+                    System.out.println("✅ STOMP 인증 통과: " + user.getId());
 
                 } else {
                     throw new IllegalArgumentException("❌ STOMP JWT 검증 실패");

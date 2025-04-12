@@ -26,6 +26,8 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 application.yml
+test.html
+index.html
 
 ### NetBeans ###
 /nbproject/private/

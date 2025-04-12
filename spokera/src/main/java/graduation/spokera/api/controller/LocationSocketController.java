@@ -3,6 +3,7 @@ package graduation.spokera.api.controller;
 import graduation.spokera.api.domain.user.User;
 import graduation.spokera.api.dto.user.UserLocationDTO;
 import graduation.spokera.api.util.LocationMemoryStore;
+import graduation.spokera.api.repository.MatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -20,39 +21,41 @@ public class LocationSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationMemoryStore locationStore;
+    private final MatchRepository matchRepository;
 
+    // ✅ 위치 메시지 수신
     @MessageMapping("/location.update")
     public void handleLocation(@Payload UserLocationDTO location,
                                Principal principal,
                                @Header("simpSessionAttributes") Map<String, Object> sessionAttributes) {
 
-        // 🔐 사용자 정보
         User user = (User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
         String userId = String.valueOf(user.getId());
         String nickname = user.getNickname();
-
-        // 🧠 matchId는 CONNECT 시 세션에 저장된 값
         String matchId = (String) sessionAttributes.get("matchId");
 
-        // 📝 로그
+        // ❗ matchId 유효성 검사
+        if (!matchRepository.existsById(Long.parseLong(matchId))) {
+            System.out.println("❌ 잘못된 matchId → 전송 중단");
+            return;
+        }
+
+        // 로그
         System.out.println("📥 [위치 수신]");
         System.out.println("👤 userId: " + userId);
         System.out.println("🧑 nickname: " + nickname);
         System.out.println("👥 matchId: " + matchId);
         System.out.println("📍 좌표: (" + location.getLatitude() + ", " + location.getLongitude() + ")");
 
-        // 🛠 DTO에 추가 정보 세팅
+        // DTO 세팅
         location.setUserId(userId);
         location.setMatchId(matchId);
         location.setUsername(nickname);
         location.setTimestamp(System.currentTimeMillis());
 
-        // 💾 메모리 저장
         locationStore.updateLocation(userId, location);
 
-        // 📡 브로드캐스트
         messagingTemplate.convertAndSend("/topic/match/" + matchId, location);
         System.out.println("📤 전송 데이터: " + location);
-
     }
 }
