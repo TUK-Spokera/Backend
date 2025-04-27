@@ -40,7 +40,6 @@ public class MatchService {
 
     /**
      * 매치 조인
-     * TODO : 2:2 이상일시 팀 배분
      */
     @Transactional
     public MatchJoinResponseDTO joinMatch(Long userId, Long matchId) {
@@ -65,7 +64,10 @@ public class MatchService {
         }
 
         // 풀방이면 못들어감
-        if (matchParticipantList.size() >= match.getMatchType().getMaxParticipants()) {
+        int currentParticipantCount = matchParticipantList.size();
+        int maxParticipantCount = match.getMatchType().getMaxParticipants();
+
+        if (currentParticipantCount >= maxParticipantCount) {
             return MatchJoinResponseDTO.builder()
                     .success(false)
                     .message("정원이 가득 찼습니다.")
@@ -81,6 +83,26 @@ public class MatchService {
                 .joinedAt(LocalDateTime.now())
                 .build();
         matchParticipantRepository.save(matchParticipant);
+        matchParticipantList.add(matchParticipant);
+        currentParticipantCount++;
+
+
+        // 유저 들어오고 2:2 방이 풀방이 되면 팀 배분을함 레이팅순으로 1,4팀 2,3팀
+        if (maxParticipantCount == 4 && currentParticipantCount >= maxParticipantCount) {
+
+            List<MatchParticipant> sortedRating = matchParticipantList.stream()
+                    .sorted(Comparator.comparingInt(mp -> mp.getUser().getBadmintonRating()))
+                    .toList();
+
+            sortedRating.get(0).setTeam(TeamType.RED);
+            sortedRating.get(1).setTeam(TeamType.BLUE);
+            sortedRating.get(2).setTeam(TeamType.BLUE);
+            sortedRating.get(3).setTeam(TeamType.RED);
+
+            matchParticipantRepository.saveAll(sortedRating);
+
+        }
+
 
         // 매칭 완료로 상태 바꿈
         match.setStatus(MatchStatus.MATCHED);

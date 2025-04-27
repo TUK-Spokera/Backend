@@ -49,7 +49,13 @@ public class MatchController {
     public MatchJoinResponseDTO joinMatch(@RequestBody MatchJoinRequestDTO matchJoinRequestDTO,
                                           @AuthenticationPrincipal User user) {
 
-        Long userId = user.getId();
+        Long userId = null;
+        if (matchJoinRequestDTO.getUserId() != null){
+            userId = matchJoinRequestDTO.getUserId();
+        }
+        else{
+            userId = user.getId();
+        }
         Long matchId = matchJoinRequestDTO.getMatchId();
 
         return matchService.joinMatch(userId, matchId);
