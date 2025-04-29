@@ -283,9 +283,18 @@ public class MatchService {
         return normalizedScore;
     }
 
-    // 기존 추천 매치 계산 메서드에서는 가중치는 그대로 40%, 30%, 20%, 10%를 적용
+    // 매치 추천
     public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
 
+        // 우선 request에 있는 DB 유처위치 갱신
+        if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null){
+            throw new RuntimeException("위치 (latitude, longitude)를 입력해주세요.");
+        }
+        requestingUser.setLatitude(requestDTO.getLatitude());
+        requestingUser.setLongitude(requestDTO.getLongitude());
+        userRepository.save(requestingUser);
+
+        // 매치추천
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
         if (matches.isEmpty()) return List.of();
 

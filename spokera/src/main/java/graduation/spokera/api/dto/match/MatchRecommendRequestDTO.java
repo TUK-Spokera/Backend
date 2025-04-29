@@ -12,6 +12,6 @@ public class MatchRecommendRequestDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private MatchType matchType;
-//    private double latitude;
-//    private double longitude;
+    private Double latitude;
+    private Double longitude;
 }

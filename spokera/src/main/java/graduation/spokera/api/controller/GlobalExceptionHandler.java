@@ -1,5 +1,6 @@
 package graduation.spokera.api.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +15,7 @@ import java.util.Map;
  */
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     // 1. 비즈니스용 예외 처리 (예: IllegalArgumentException)
@@ -32,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception e) {
         e.printStackTrace();
-        return buildErrorResponse("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return buildErrorResponse("서버 내부 오류가 발생했습니다. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // 🔧 공통 응답 생성 메서드
