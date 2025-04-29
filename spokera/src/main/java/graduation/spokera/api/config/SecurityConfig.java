@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/refresh", "/oauth/kakao/**", "/ws/**").permitAll()
                         .requestMatchers("/", "/test.html", "/js/**", "/css/**").permitAll()
+                        .requestMatchers("/demo/**").permitAll() // 데모전용
                         .anyRequest().authenticated()
                 )
                 // ✅ 수정된 생성자 반영

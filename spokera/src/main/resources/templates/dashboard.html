@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <!-- 필요하다면 Bootstrap CSS나 Tailwind 등을 여기에 추가 -->
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+<h1>대기 중인 경기 목록</h1>
+<table class="table">
+    <thead>
+    <tr>
+        <th>경기 ID</th>
+        <th>종목</th>
+        <th>매치 타입</th>
+        <th>시작 시간</th>
+        <th>종료 시간</th>
+        <th>참가자</th>
+        <th>평균위치</th>
+        <th>평균점수</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="match : ${waitMatches}">
+        <td th:text="${match.matchId}">-</td>
+        <td th:text="${match.sportType}">-</td>
+        <td th:text="${match.matchType}">-</td>
+        <td th:text="${#temporals.format(match.startTime, 'MM/dd HH:mm')}">-</td>
+        <td th:text="${#temporals.format(match.endTime,   'MM/dd HH:mm')}">-</td>
+        <td>
+            <ul>
+                <li th:each="p : ${participantsMap[match.matchId]}"
+                    th:text="|${p.user.nickname}(${p.user.badmintonRating})|">사용자명</li>
+                <li th:if="${#lists.isEmpty(participantsMap[match.matchId])}">참가자 없음</li>
+            </ul>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(waitMatches)}">
+        <td colspan="5">현재 대기 중인 경기가 없습니다.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
