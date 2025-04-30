@@ -584,6 +584,12 @@ public class MatchService {
             matchHistoryList.add(matchHistoryResponseDTO);
         }
 
+        // startTime 기준 내림차순 정렬
+        matchHistoryList.sort(
+                Comparator.comparing(MatchHistoryResponseDTO::getStartTime)
+                        .reversed()
+        );
+
         return matchHistoryList;
     }
 
