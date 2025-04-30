@@ -30,7 +30,6 @@
         <th>시작 시간</th>
         <th>종료 시간</th>
         <th>참가자</th>
-        <th>평균위치</th>
         <th>평균점수</th>
     </tr>
     </thead>
@@ -44,10 +43,11 @@
         <td>
             <ul>
                 <li th:each="p : ${participantsMap[match.matchId]}"
-                    th:text="|${p.user.nickname}(${p.user.badmintonRating})|">사용자명</li>
+                    th:text="|${p.user.nickname} (점수: ${p.user.badmintonRating})|">사용자명</li>
                 <li th:if="${#lists.isEmpty(participantsMap[match.matchId])}">참가자 없음</li>
             </ul>
         </td>
+        <td th:text="${avgRatingMap[match.matchId]}">-</td>
     </tr>
     <tr th:if="${#lists.isEmpty(waitMatches)}">
         <td colspan="5">현재 대기 중인 경기가 없습니다.</td>

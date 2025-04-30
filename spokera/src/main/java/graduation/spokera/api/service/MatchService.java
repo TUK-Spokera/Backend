@@ -103,10 +103,12 @@ public class MatchService {
 
         }
 
+        // 매치 완료로 상태 바꿈
+        if (currentParticipantCount == maxParticipantCount) {
+            match.setStatus(MatchStatus.MATCHED);
+            matchRepository.save(match);
+        }
 
-        // 매칭 완료로 상태 바꿈
-        match.setStatus(MatchStatus.MATCHED);
-        matchRepository.save(match);
 
         return MatchJoinResponseDTO.builder()
                 .success(true)
@@ -119,8 +121,20 @@ public class MatchService {
      * 매치 생성
      */
     @Transactional
-    public MatchCreateResponseDTO createMatch(MatchRecommendRequestDTO matchRecommendRequestDto, User user) {
+    public MatchCreateResponseDTO createMatch(MatchRecommendRequestDTO matchRecommendRequestDto, Long userId) {
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
+
+        // 우선 request에 있는 DB 유처위치 갱신
+        if ((matchRecommendRequestDto.getLatitude() == null) || matchRecommendRequestDto.getLongitude() == null){
+            throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
+        }
+        user.setLatitude(matchRecommendRequestDto.getLatitude());
+        user.setLongitude(matchRecommendRequestDto.getLongitude());
+        userRepository.save(user);
+        
         Match match = Match.builder()
                 .sportType(matchRecommendRequestDto.getSportType())
                 .startTime(matchRecommendRequestDto.getStartTime())
@@ -179,6 +193,80 @@ public class MatchService {
     /**
      * 매치추천 부분
      */
+
+    // 매치 추천
+    public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
+
+        // 우선 request에 있는 DB 유처위치 갱신
+        if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null){
+            throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
+        }
+        requestingUser.setLatitude(requestDTO.getLatitude());
+        requestingUser.setLongitude(requestDTO.getLongitude());
+        userRepository.save(requestingUser);
+
+        // 매치추천
+        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
+        if (matches.isEmpty()) return List.of();
+
+        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
+        Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
+                .collect(Collectors.groupingBy(mp -> mp.getMatch().getMatchId()));
+        matches = matches.stream()
+                .filter(match -> {
+                    List<MatchParticipant> participants = matchParticipantsMap.get(match.getMatchId());
+                    if (participants == null) return true;
+                    return participants.stream()
+                            .noneMatch(mp -> mp.getUser().getId().equals(requestingUser.getId()));
+                })
+                .collect(Collectors.toList());
+
+        String desiredSport = requestDTO.getSportType();
+        LocalDateTime desiredTime = requestDTO.getStartTime();
+        double userLat = requestingUser.getLatitude();
+        double userLon = requestingUser.getLongitude();
+
+        for (Match match : matches) {
+
+            // 매치유저들의 평균 거리 <-> 나의 거리 계산
+            // 1) 참여자 리스트 조회
+            List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
+            if (!participants.isEmpty()) {
+                // 2) 참여자들 위·경도 합산
+                double sumLat = participants.stream()
+                        .mapToDouble(mp -> mp.getUser().getLatitude())
+                        .sum();
+                double sumLon = participants.stream()
+                        .mapToDouble(mp -> mp.getUser().getLongitude())
+                        .sum();
+
+                // 3) 평균 위·경도 계산
+                double avgLat = sumLat / participants.size();
+                double avgLon = sumLon / participants.size();
+
+                // 4) 요청자 위치 ⇆ 평균 위치 간 거리 계산
+                double distance = haversineDistance(userLat, userLon, avgLat, avgLon);
+                distance = Math.round(distance * 100) / 100.0;
+                match.setAverageDistance(distance);
+
+            } else {
+                match.setAverageDistance(0.0);
+            }
+
+            // 나머지 점수 계산
+            double locationScore = calculateLocationScoreForMatch(userLat, userLon, match);
+            double timeScore = calculateTimeScore(desiredTime, match.getStartTime());
+            double sportScore = calculateSportScore(desiredSport, match.getSportType());
+            double ratingScore = calculateRatingScore(match);
+
+            // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 레이팅 10%
+            double totalScore = locationScore * 0.4 + timeScore * 0.3 + sportScore * 0.2 + ratingScore * 0.1;
+            match.setRecommendationScore((int) totalScore);
+        }
+
+        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
+        return matches.subList(0, Math.min(matches.size(), 25));
+    }
 
     /**
      * 두 좌표(lat1, lon1)와 (lat2, lon2) 사이의 거리(km)를 Haversine 공식을 사용하여 계산
@@ -281,53 +369,6 @@ public class MatchService {
         if (normalizedScore < 0) normalizedScore = 0;
         if (normalizedScore > 100) normalizedScore = 100;
         return normalizedScore;
-    }
-
-    // 매치 추천
-    public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
-
-        // 우선 request에 있는 DB 유처위치 갱신
-        if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null){
-            throw new RuntimeException("위치 (latitude, longitude)를 입력해주세요.");
-        }
-        requestingUser.setLatitude(requestDTO.getLatitude());
-        requestingUser.setLongitude(requestDTO.getLongitude());
-        userRepository.save(requestingUser);
-
-        // 매치추천
-        List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
-        if (matches.isEmpty()) return List.of();
-
-        List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
-        Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
-                .collect(Collectors.groupingBy(mp -> mp.getMatch().getMatchId()));
-        matches = matches.stream()
-                .filter(match -> {
-                    List<MatchParticipant> participants = matchParticipantsMap.get(match.getMatchId());
-                    if (participants == null) return true;
-                    return participants.stream()
-                            .noneMatch(mp -> mp.getUser().getId().equals(requestingUser.getId()));
-                })
-                .collect(Collectors.toList());
-
-        String desiredSport = requestDTO.getSportType();
-        LocalDateTime desiredTime = requestDTO.getStartTime();
-        double userLat = requestingUser.getLatitude();
-        double userLon = requestingUser.getLongitude();
-
-        for (Match match : matches) {
-            double locationScore = calculateLocationScoreForMatch(userLat, userLon, match);
-            double timeScore = calculateTimeScore(desiredTime, match.getStartTime());
-            double sportScore = calculateSportScore(desiredSport, match.getSportType());
-            double ratingScore = calculateRatingScore(match);
-
-            // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 평점 10%
-            double totalScore = locationScore * 0.2 + timeScore * 0.5 + sportScore * 0.2 + ratingScore * 0.1;
-            match.setRecommendationScore((int) totalScore);
-        }
-
-        matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
-        return matches.subList(0, Math.min(matches.size(), 10));
     }
 
     /**

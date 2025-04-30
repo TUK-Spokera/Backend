@@ -39,6 +39,9 @@ public class Match {
     @Transient
     private Integer recommendationScore;
 
+    @Transient
+    private Double averageDistance;
+
     @Enumerated(EnumType.STRING)
     private TeamType winnerTeam;
 }

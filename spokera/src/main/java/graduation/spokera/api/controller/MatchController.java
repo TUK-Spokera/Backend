@@ -41,8 +41,15 @@ public class MatchController {
     @PostMapping("/create")
     public ResponseEntity<MatchCreateResponseDTO> createMatch(@RequestBody MatchRecommendRequestDTO matchRecommendRequestDto,
                                                               @AuthenticationPrincipal User user) {
+        Long userId = null;
+        if (matchRecommendRequestDto.getUserId() != null){
+            userId = matchRecommendRequestDto.getUserId();
+        }
+        else{
+            userId = user.getId();
+        }
 
-        MatchCreateResponseDTO matchCreateResponseDTO = matchService.createMatch(matchRecommendRequestDto, user);
+        MatchCreateResponseDTO matchCreateResponseDTO = matchService.createMatch(matchRecommendRequestDto, userId);
         return ResponseEntity.ok(matchCreateResponseDTO);
     }
 
