@@ -128,12 +128,12 @@ public class MatchService {
 
 
         // 우선 request에 있는 DB 유처위치 갱신
-        if ((matchRecommendRequestDto.getLatitude() == null) || matchRecommendRequestDto.getLongitude() == null){
-            throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
-        }
-        user.setLatitude(matchRecommendRequestDto.getLatitude());
-        user.setLongitude(matchRecommendRequestDto.getLongitude());
-        userRepository.save(user);
+//        if ((matchRecommendRequestDto.getLatitude() == null) || matchRecommendRequestDto.getLongitude() == null){
+//            throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
+//        }
+//        user.setLatitude(matchRecommendRequestDto.getLatitude());
+//        user.setLongitude(matchRecommendRequestDto.getLongitude());
+//        userRepository.save(user);
         
         Match match = Match.builder()
                 .sportType(matchRecommendRequestDto.getSportType())
@@ -265,7 +265,7 @@ public class MatchService {
         }
 
         matches.sort(Comparator.comparing(Match::getRecommendationScore).reversed());
-        return matches.subList(0, Math.min(matches.size(), 25));
+        return matches.subList(0, Math.min(matches.size(), 35));
     }
 
     /**
