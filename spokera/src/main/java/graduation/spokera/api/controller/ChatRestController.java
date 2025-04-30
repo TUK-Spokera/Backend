@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,7 @@ public class ChatRestController {
         return matchParticipantRepository.findByUser(user)
                 .stream()
                 .map(MatchParticipant::getMatch)
+                .sorted(Comparator.comparing(Match::getStartTime).reversed())
                 .collect(Collectors.toList());
     }
 
