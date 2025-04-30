@@ -261,6 +261,8 @@ public class MatchService {
 
             // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 레이팅 10%
             double totalScore = locationScore * 0.4 + timeScore * 0.3 + sportScore * 0.2 + ratingScore * 0.1;
+
+            log.info("matchId: {}, locationScore: {}",match.getMatchId(), locationScore);
             match.setRecommendationScore((int) totalScore);
         }
 
@@ -287,26 +289,38 @@ public class MatchService {
     }
 
     // 1. 위치 점수
+    /**
+     * 위치 점수 (거리 0km → 100점, maxDistance km → 0점 선형 보간)
+     */
     private double calculateLocationScoreForMatch(double userLat, double userLon, Match match) {
         List<MatchParticipant> participants = matchParticipantRepository.findByMatch(match);
         if (participants == null || participants.isEmpty()) {
-            // 참여자가 없으면 기본적으로 최대 점수를 부여
-            return 100;
+            // 참여자가 없으면 기본적으로 최고 점수 부여
+            return 100.0;
         }
-        double totalDistance = 0;
-        int count = 0;
-        for (MatchParticipant participant : participants) {
-            User participantUser = participant.getUser();
-            double pLat = participantUser.getLatitude();
-            double pLon = participantUser.getLongitude();
-            double distance = haversineDistance(userLat, userLon, pLat, pLon);
-            totalDistance += distance;
-            count++;
+
+        // 참여자들의 평균 위치 계산
+        double sumLat = 0, sumLon = 0;
+        for (MatchParticipant mp : participants) {
+            sumLat += mp.getUser().getLatitude();
+            sumLon += mp.getUser().getLongitude();
         }
-        double averageDistance = totalDistance / count;
-        if (averageDistance <= 5) return 100;
-        if (averageDistance >= 20) return 0;
-        return 100 * (20 - averageDistance) / 15.0;
+        double avgLat = sumLat / participants.size();
+        double avgLon = sumLon / participants.size();
+
+        // 사용자와 평균 위치 간 거리 계산
+        double averageDistance = haversineDistance(userLat, userLon, avgLat, avgLon);
+
+        // 선형 보간을 위한 최대 거리 설정 (예: 20km)
+        double maxDistance = 300.0;
+
+        // 점수 계산: 거리가 0km면 100점, maxDistance km면 0점, 그 사이는 선형
+        double rawScore = 100.0 * (maxDistance - averageDistance) / maxDistance;
+
+        // 0~100 범위로 클램프
+        if (rawScore < 0) return 0.0;
+        if (rawScore > 100) return 100.0;
+        return rawScore;
     }
 
 
