@@ -1,5 +1,6 @@
 package graduation.spokera.api.controller;
 
+import graduation.spokera.api.domain.type.MatchStatus;
 import graduation.spokera.api.dto.chat.ChatMessageDTO;
 import graduation.spokera.api.domain.chat.ChatMessage;
 import graduation.spokera.api.domain.match.Match;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,10 +44,23 @@ public class ChatRestController {
      */
     @GetMapping("/rooms")
     public List<Match> getUserChatRooms(@AuthenticationPrincipal User user) {
+        // 리턴 우선순위
+        Map<MatchStatus, Integer> statusPriority = Map.of(
+                MatchStatus.MATCHED, 0,
+                MatchStatus.WAITING, 1,
+                MatchStatus.COMPLETED, 2
+        );
+
+        // status 우선순위 후에 날짜를 내림차순해서 정렬해서 보냄
         return matchParticipantRepository.findByUser(user)
                 .stream()
                 .map(MatchParticipant::getMatch)
-                .sorted(Comparator.comparing(Match::getStartTime).reversed())
+                .sorted(
+                        Comparator.comparingInt((Match m) ->
+                                        statusPriority.getOrDefault(m.getStatus(), Integer.MAX_VALUE)
+                                )
+                                .thenComparing(Match::getStartTime, Comparator.reverseOrder())
+                )
                 .collect(Collectors.toList());
     }
 

@@ -122,7 +122,7 @@ public class MatchService {
      */
     @Transactional
     public MatchCreateResponseDTO createMatch(MatchRecommendRequestDTO matchRecommendRequestDto, Long userId) {
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
@@ -134,7 +134,7 @@ public class MatchService {
 //        user.setLatitude(matchRecommendRequestDto.getLatitude());
 //        user.setLongitude(matchRecommendRequestDto.getLongitude());
 //        userRepository.save(user);
-        
+
         Match match = Match.builder()
                 .sportType(matchRecommendRequestDto.getSportType())
                 .startTime(matchRecommendRequestDto.getStartTime())
@@ -198,11 +198,13 @@ public class MatchService {
     public List<Match> getRecommendedMatches(MatchRecommendRequestDTO requestDTO, User requestingUser) {
 
         // 우선 request에 있는 DB 유처위치 갱신
-        if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null){
+        if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null) {
             throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
         }
-        requestingUser.setLatitude(requestDTO.getLatitude());
-        requestingUser.setLongitude(requestDTO.getLongitude());
+        // 데모용으로 임시
+
+        requestingUser.setLatitude(37.3483539428602);
+        requestingUser.setLongitude(126.740958195904);
         userRepository.save(requestingUser);
 
         // 매치추천
@@ -259,10 +261,15 @@ public class MatchService {
             double sportScore = calculateSportScore(desiredSport, match.getSportType());
             double ratingScore = calculateRatingScore(match);
 
-            // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 레이팅 10%
-            double totalScore = locationScore * 0.4 + timeScore * 0.3 + sportScore * 0.2 + ratingScore * 0.1;
+            locationScore = locationScore * 0.5;
+            timeScore = timeScore * 0.3;
+            sportScore = sportScore * 0.1;
+            ratingScore = ratingScore * 0.1;
 
-            log.info("matchId: {}, locationScore: {}",match.getMatchId(), locationScore);
+            // 가중치 적용: 위치 40%, 시간 30%, 종목 20%, 레이팅 10%
+            double totalScore = locationScore + timeScore + sportScore + ratingScore;
+
+            log.debug("matchId: {}, 위치점수: {}, 시간일치도점수: {}, 종목일치도점수: {}, 레이팅점수: {}", match.getMatchId(), Math.round(locationScore * 100) / 100.0, Math.round(timeScore * 100) / 100.0, sportScore, ratingScore);
             match.setRecommendationScore((int) totalScore);
         }
 
@@ -289,6 +296,7 @@ public class MatchService {
     }
 
     // 1. 위치 점수
+
     /**
      * 위치 점수 (거리 0km → 100점, maxDistance km → 0점 선형 보간)
      */
@@ -340,6 +348,9 @@ public class MatchService {
         }
 
         double score = 100.0 * (maxMinutes - remainingMinutes) / maxMinutes;
+
+        score = Math.round(score * 100) / 100.0;
+
         return score;
     }
 
