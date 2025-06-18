@@ -91,7 +91,7 @@ public class MatchService {
         if (maxParticipantCount == 4 && currentParticipantCount >= maxParticipantCount) {
 
             List<MatchParticipant> sortedRating = matchParticipantList.stream()
-                    .sorted(Comparator.comparingInt(mp -> mp.getUser().getBadmintonRating()))
+                    .sorted(Comparator.comparingInt(mp -> getSportRating(mp.getUser(), match.getSportType())))
                     .toList();
 
             sortedRating.get(0).setTeam(TeamType.RED);
@@ -201,8 +201,10 @@ public class MatchService {
         if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null) {
             throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
         }
-        // 데모용으로 임시
 
+        // 데모용으로 임시로 유저위치 받아서 등록 대신 학교로 고정
+//        requestingUser.setLatitude(requestDTO.getLatitude());
+//        requestingUser.setLongitude(requestDTO.getLongitude());
         requestingUser.setLatitude(37.3483539428602);
         requestingUser.setLongitude(126.740958195904);
         userRepository.save(requestingUser);
@@ -210,6 +212,11 @@ public class MatchService {
         // 매치추천
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
         if (matches.isEmpty()) return List.of();
+
+//        // 동일한 스포츠 타입만 필터링
+        matches = matches.stream()
+                .filter(match -> match.getSportType().equalsIgnoreCase(requestDTO.getSportType()))
+                .collect(Collectors.toList());
 
         List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
         Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
@@ -516,12 +523,32 @@ public class MatchService {
         for (MatchParticipant participant : matchParticipantList) {
             User user = userRepository.findById(participant.getUser().getId())
                     .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음"));
-            if (requestDTO.getWinnerTeam() == participant.getTeam()) {
-                // 승리 팀이면 ratingDelta 만큼 상승
-                user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
-            } else {
-                // 패배 팀이면 ratingDelta 만큼 하락
-                user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
+
+            // 종목별로 레이팅 업데이트
+            switch (match.getSportType().toLowerCase()) {
+                case "badminton":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
+                    } else {
+                        user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
+                    }
+                    break;
+                case "pingpong":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setPingpongRating(user.getPingpongRating() + ratingDelta);
+                    } else {
+                        user.setPingpongRating(user.getPingpongRating() - ratingDelta);
+                    }
+                    break;
+                case "futsal":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setFutsalRating(user.getFutsalRating() + ratingDelta);
+                    } else {
+                        user.setFutsalRating(user.getFutsalRating() - ratingDelta);
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("지원하지 않는 스포츠 종목입니다.");
             }
             userRepository.save(user);
         }
