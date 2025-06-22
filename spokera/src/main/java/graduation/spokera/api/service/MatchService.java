@@ -584,7 +584,7 @@ public class MatchService {
             } else if (skillGap <= 300) {
                 return "꽤 높은 수준의 상대";
             } else {
-                return "상당한 실력차의 상대";
+                return "강력한 상대";
             }
         } else {  // 내 레이팅이 더 높음
             if (-skillGap <= 150) {
@@ -592,7 +592,7 @@ public class MatchService {
             } else if (-skillGap <= 300) {
                 return "유리한 상대";
             } else {
-                return "경기를 리드할 수 있는 상대";
+                return "확실한 우세";
             }
         }
     }
