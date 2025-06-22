@@ -258,8 +258,20 @@ public class MatchService {
                 distance = Math.round(distance * 100) / 100.0;
                 match.setAverageDistance(distance);
 
+                // 5) 해당 매치 종목의 레이팅으로 실력 차이 계산
+                double sumRating = participants.stream()
+                        .mapToDouble(mp -> getSportRating(mp.getUser(), match.getSportType()))
+                        .sum();
+                double avgRating = sumRating / participants.size();
+                double requestUserRating = getSportRating(requestingUser, match.getSportType());
+
+                double skillGap = Math.abs(avgRating - requestUserRating);
+                skillGap = Math.round(skillGap * 10) / 10.0;  // 소수점 첫째자리까지 표시
+                match.setSkillGapText(getSkillGapText(skillGap));  // 실력 차이를 텍스트로 변환
+
             } else {
                 match.setAverageDistance(0.0);
+                match.setSkillGapText("정보 없음");
             }
 
             // 나머지 점수 계산
@@ -562,18 +574,43 @@ public class MatchService {
         return responseDTO;
     }
 
-    private int getSportRating(User user, String sportType) {
-        switch (sportType.toLowerCase()) {
-            case "badminton":
-                return user.getBadmintonRating();
-            case "pingpong":
-                return user.getPingpongRating();
-            case "futsal":
-                return user.getFutsalRating();
-            default:
-                // 알 수 없는 종목이면 기본값 사용 (예: 1000점)
-                return 1000;
+    private String getSkillGapText(double skillGap) {
+        // skillGap = 상대 평균 레이팅 - 나의 레이팅
+        if (Math.abs(skillGap) <= 50) {
+            return "비슷한 실력의 상대"; // "대등한 상대"도 좋은 표현입니다.
+        } else if (skillGap > 0) {  // 상대방 레이팅이 더 높음
+            if (skillGap <= 150) {
+                return "약간 높은 수준의 상대";
+            } else if (skillGap <= 300) {
+                return "꽤 높은 수준의 상대";
+            } else {
+                return "상당한 실력차의 상대";
+            }
+        } else {  // 내 레이팅이 더 높음
+            if (-skillGap <= 150) {
+                return "해볼 만한 상대";
+            } else if (-skillGap <= 300) {
+                return "유리한 상대";
+            } else {
+                return "경기를 리드할 수 있는 상대";
+            }
         }
+    }
+
+    private int getSportRating(User user, String sportType) {
+        // 디버깅을 위한 로그 추가
+
+        // 대소문자 구분 없이 비교
+        if ("badminton".equalsIgnoreCase(sportType) || "배드민턴".equals(sportType)) {
+            return user.getBadmintonRating();
+        } else if ("pingpong".equalsIgnoreCase(sportType) || "탁구".equals(sportType)) {
+            return user.getPingpongRating();
+        } else if ("futsal".equalsIgnoreCase(sportType) || "풋살".equals(sportType)) {
+            return user.getFutsalRating();
+        }
+
+        log.warn("알 수 없는 종목: {}", sportType);
+        return 1000; // 기본값
     }
 
     /**
