@@ -43,7 +43,7 @@ public class FacilityService {
         // 특정 `FtypeNm`을 포함하는 시설 조회 (예: 배드민턴, 축구 등)
         List<Facility> allFacilities = facilityRepo.findByFaciNmContainingOrFtypeNmContaining(sportType, sportType);
         log.info(sportType);
-        log.info(allFacilities.toString());
+//        log.info(allFacilities.toString());
 
         // 거리 계산 후 가까운 경기장 추천 (maxResults 개수 제한)
         return allFacilities.stream()
