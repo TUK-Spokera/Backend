@@ -538,21 +538,21 @@ public class MatchService {
 
             // 종목별로 레이팅 업데이트
             switch (match.getSportType().toLowerCase()) {
-                case "badminton":
+                case "배드민턴":
                     if (requestDTO.getWinnerTeam() == participant.getTeam()) {
                         user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
                     } else {
                         user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
                     }
                     break;
-                case "pingpong":
+                case "탁구":
                     if (requestDTO.getWinnerTeam() == participant.getTeam()) {
                         user.setPingpongRating(user.getPingpongRating() + ratingDelta);
                     } else {
                         user.setPingpongRating(user.getPingpongRating() - ratingDelta);
                     }
                     break;
-                case "futsal":
+                case "풋살":
                     if (requestDTO.getWinnerTeam() == participant.getTeam()) {
                         user.setFutsalRating(user.getFutsalRating() + ratingDelta);
                     } else {
