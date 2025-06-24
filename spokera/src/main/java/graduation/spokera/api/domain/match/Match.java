@@ -42,6 +42,9 @@ public class Match {
     @Transient
     private Double averageDistance;
 
+    @Transient
+    private String skillGapText;  // 실력 차이를 텍스트로 표현 (예: "비슷한 실력", "조금 더 높은 실력" 등)
+
     @Enumerated(EnumType.STRING)
     private TeamType winnerTeam;
 }

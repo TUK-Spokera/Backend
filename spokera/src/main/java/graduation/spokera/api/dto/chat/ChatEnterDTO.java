@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ChatMessageDTO {
+public class ChatEnterDTO {
     private Long matchId;
-    private String senderName;
-    private String content;
+    private String nickname;
+    private String message;
 }

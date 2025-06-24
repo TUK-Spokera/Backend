@@ -6,6 +6,7 @@ import graduation.spokera.api.dto.facility.FacilityLocationResponse;
 import graduation.spokera.api.dto.facility.FacilityRecommendResponseDTO;
 import graduation.spokera.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
@@ -16,10 +17,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FacilityService {
 
     private final FacilityRepository facilityRepo;
     private static final String NAVER_MAP_SEARCH_BASE_URL = "https://map.naver.com/p/search/";
+
 
     public List<FacilityRecommendResponseDTO> recommendFacilities(List<User> users, String sportType, int maxResults) {
 
@@ -38,8 +41,9 @@ public class FacilityService {
         double midLng = avgLng.getAsDouble();
 
         // 특정 `FtypeNm`을 포함하는 시설 조회 (예: 배드민턴, 축구 등)
-
-        List<Facility> allFacilities = facilityRepo.findByFtypeNmContaining(sportType);
+        List<Facility> allFacilities = facilityRepo.findByFaciNmContainingOrFtypeNmContaining(sportType, sportType);
+        log.info(sportType);
+//        log.info(allFacilities.toString());
 
         // 거리 계산 후 가까운 경기장 추천 (maxResults 개수 제한)
         return allFacilities.stream()

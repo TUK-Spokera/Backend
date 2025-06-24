@@ -91,7 +91,7 @@ public class MatchService {
         if (maxParticipantCount == 4 && currentParticipantCount >= maxParticipantCount) {
 
             List<MatchParticipant> sortedRating = matchParticipantList.stream()
-                    .sorted(Comparator.comparingInt(mp -> mp.getUser().getBadmintonRating()))
+                    .sorted(Comparator.comparingInt(mp -> getSportRating(mp.getUser(), match.getSportType())))
                     .toList();
 
             sortedRating.get(0).setTeam(TeamType.RED);
@@ -201,8 +201,10 @@ public class MatchService {
         if ((requestDTO.getLatitude() == null) || requestDTO.getLongitude() == null) {
             throw new IllegalArgumentException("위치 (latitude, longitude)를 입력해주세요.");
         }
-        // 데모용으로 임시
 
+        // 데모용으로 임시로 유저위치 받아서 등록 대신 학교로 고정
+//        requestingUser.setLatitude(requestDTO.getLatitude());
+//        requestingUser.setLongitude(requestDTO.getLongitude());
         requestingUser.setLatitude(37.3483539428602);
         requestingUser.setLongitude(126.740958195904);
         userRepository.save(requestingUser);
@@ -210,6 +212,11 @@ public class MatchService {
         // 매치추천
         List<Match> matches = matchRepository.findByStatus(MatchStatus.WAITING);
         if (matches.isEmpty()) return List.of();
+
+//        // 동일한 스포츠 타입만 필터링
+        matches = matches.stream()
+                .filter(match -> match.getSportType().equalsIgnoreCase(requestDTO.getSportType()))
+                .collect(Collectors.toList());
 
         List<MatchParticipant> allParticipants = matchParticipantRepository.findByMatchIn(matches);
         Map<Long, List<MatchParticipant>> matchParticipantsMap = allParticipants.stream()
@@ -251,8 +258,20 @@ public class MatchService {
                 distance = Math.round(distance * 100) / 100.0;
                 match.setAverageDistance(distance);
 
+                // 5) 해당 매치 종목의 레이팅으로 실력 차이 계산
+                double sumRating = participants.stream()
+                        .mapToDouble(mp -> getSportRating(mp.getUser(), match.getSportType()))
+                        .sum();
+                double avgRating = sumRating / participants.size();
+                double requestUserRating = getSportRating(requestingUser, match.getSportType());
+
+                double skillGap = Math.abs(avgRating - requestUserRating);
+                skillGap = Math.round(skillGap * 10) / 10.0;  // 소수점 첫째자리까지 표시
+                match.setSkillGapText(getSkillGapText(skillGap));  // 실력 차이를 텍스트로 변환
+
             } else {
                 match.setAverageDistance(0.0);
+                match.setSkillGapText("정보 없음");
             }
 
             // 나머지 점수 계산
@@ -516,12 +535,32 @@ public class MatchService {
         for (MatchParticipant participant : matchParticipantList) {
             User user = userRepository.findById(participant.getUser().getId())
                     .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음"));
-            if (requestDTO.getWinnerTeam() == participant.getTeam()) {
-                // 승리 팀이면 ratingDelta 만큼 상승
-                user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
-            } else {
-                // 패배 팀이면 ratingDelta 만큼 하락
-                user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
+
+            // 종목별로 레이팅 업데이트
+            switch (match.getSportType().toLowerCase()) {
+                case "배드민턴":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setBadmintonRating(user.getBadmintonRating() + ratingDelta);
+                    } else {
+                        user.setBadmintonRating(user.getBadmintonRating() - ratingDelta);
+                    }
+                    break;
+                case "탁구":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setPingpongRating(user.getPingpongRating() + ratingDelta);
+                    } else {
+                        user.setPingpongRating(user.getPingpongRating() - ratingDelta);
+                    }
+                    break;
+                case "풋살":
+                    if (requestDTO.getWinnerTeam() == participant.getTeam()) {
+                        user.setFutsalRating(user.getFutsalRating() + ratingDelta);
+                    } else {
+                        user.setFutsalRating(user.getFutsalRating() - ratingDelta);
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("지원하지 않는 스포츠 종목입니다.");
             }
             userRepository.save(user);
         }
@@ -535,18 +574,43 @@ public class MatchService {
         return responseDTO;
     }
 
-    private int getSportRating(User user, String sportType) {
-        switch (sportType.toLowerCase()) {
-            case "badminton":
-                return user.getBadmintonRating();
-            case "pingpong":
-                return user.getPingpongRating();
-            case "futsal":
-                return user.getFutsalRating();
-            default:
-                // 알 수 없는 종목이면 기본값 사용 (예: 1000점)
-                return 1000;
+    private String getSkillGapText(double skillGap) {
+        // skillGap = 상대 평균 레이팅 - 나의 레이팅
+        if (Math.abs(skillGap) <= 50) {
+            return "비슷한 실력의 상대"; // "대등한 상대"도 좋은 표현입니다.
+        } else if (skillGap > 0) {  // 상대방 레이팅이 더 높음
+            if (skillGap <= 150) {
+                return "약간 높은 수준의 상대";
+            } else if (skillGap <= 300) {
+                return "꽤 높은 수준의 상대";
+            } else {
+                return "강력한 상대";
+            }
+        } else {  // 내 레이팅이 더 높음
+            if (-skillGap <= 150) {
+                return "해볼 만한 상대";
+            } else if (-skillGap <= 300) {
+                return "유리한 상대";
+            } else {
+                return "확실한 우세";
+            }
         }
+    }
+
+    private int getSportRating(User user, String sportType) {
+        // 디버깅을 위한 로그 추가
+
+        // 대소문자 구분 없이 비교
+        if ("badminton".equalsIgnoreCase(sportType) || "배드민턴".equals(sportType)) {
+            return user.getBadmintonRating();
+        } else if ("pingpong".equalsIgnoreCase(sportType) || "탁구".equals(sportType)) {
+            return user.getPingpongRating();
+        } else if ("futsal".equalsIgnoreCase(sportType) || "풋살".equals(sportType)) {
+            return user.getFutsalRating();
+        }
+
+        log.warn("알 수 없는 종목: {}", sportType);
+        return 1000; // 기본값
     }
 
     /**

@@ -15,4 +15,5 @@ public interface FacilityRepository extends JpaRepository<Facility, Integer> {
 
     Optional<Facility> findByFaciId(Integer faciId);
 
+    List<Facility> findByFaciNmContainingOrFtypeNmContaining(String faciNm, String ftypeNm);
 }

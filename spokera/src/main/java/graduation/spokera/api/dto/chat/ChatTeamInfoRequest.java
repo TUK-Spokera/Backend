@@ -2,11 +2,11 @@ package graduation.spokera.api.dto.chat;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-public class ChatMessageDTO {
+public class ChatTeamInfoRequest {
     private Long matchId;
-    private String senderName;
-    private String content;
 }
